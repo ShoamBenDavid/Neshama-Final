@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput as RNTextInput,
-  Modal,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Text from '../components/Text';
 import CategoryTabs, { Category } from '../components/CategoryTabs';
 import ForumPostCard from '../components/ForumPostCard';
-import BackButton from '../components/BackButton';
+import ScreenHeader from '../components/ScreenHeader';
+import SearchBar from '../components/SearchBar';
+import ModalHeader from '../components/ModalHeader';
+import EmptyState from '../components/EmptyState';
+import FormInput from '../components/FormInput';
+import InfoCard from '../components/InfoCard';
+import FilterChip from '../components/FilterChip';
 import HelpFooterButton from '../components/HelpFooterButton';
 import colors from '../config/colors';
 
@@ -106,6 +105,8 @@ export default function ForumScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewPostModal, setShowNewPostModal] = useState(false);
   const [sortBy, setSortBy] = useState<'recent' | 'popular'>('recent');
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
 
   // Filter posts
   const filteredPosts = posts.filter((post) => {
@@ -123,7 +124,7 @@ export default function ForumScreen() {
     if (sortBy === 'popular') {
       return b.likes - a.likes;
     }
-    return 0; // Keep original order for recent
+    return 0;
   });
 
   const getCategoryInfo = (categoryId: string) => {
@@ -135,31 +136,21 @@ export default function ForumScreen() {
     };
   };
 
+  const handleSavePost = () => {
+    console.log('Save post:', { title: newPostTitle, content: newPostContent });
+    setShowNewPostModal(false);
+    setNewPostTitle('');
+    setNewPostContent('');
+  };
+
   return (
     <Screen style={styles.screen}>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <MaterialCommunityIcons
-              name="account-group"
-              size={32}
-              color={colors.primary}
-            />
-            <View style={styles.headerText}>
-              <View style={{alignItems: 'flex-start'}}>
-              <Text style={styles.headerTitle}>קהילת התמיכה</Text>
-              <Text style={styles.headerSubtitle}>
-                שתף, שאל, ותמוך - יחד אנחנו חזקים יותר
-              </Text>
-              </View>
-            </View>
-          </View>
-          <BackButton />
-        </View>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScreenHeader
+          icon="account-group"
+          title="קהילת התמיכה"
+          subtitle="שתף, שאל, ותמוך - יחד אנחנו חזקים יותר"
+        />
 
         {/* New Post Button */}
         <TouchableOpacity
@@ -171,24 +162,12 @@ export default function ForumScreen() {
           <Text style={styles.newPostButtonText}>פוסט חדש</Text>
         </TouchableOpacity>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={20}
-            color={colors.text.secondary}
-          />
-          <RNTextInput
-            style={styles.searchInput}
-            placeholder="חיפוש בפורום..."
-            placeholderTextColor={colors.text.light}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            textAlign="right"
-          />
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="חיפוש בפורום..."
+        />
 
-        {/* Category Tabs */}
         <CategoryTabs
           categories={categories}
           selectedCategory={selectedCategory}
@@ -198,48 +177,22 @@ export default function ForumScreen() {
         {/* Sort Options */}
         <View style={styles.sortContainer}>
           <View style={styles.sortButtons}>
-            <TouchableOpacity
-              style={[
-                styles.sortButton,
-                sortBy === 'recent' && styles.sortButtonActive,
-              ]}
+            <FilterChip
+              label="אחרונים"
+              icon="clock-outline"
+              isActive={sortBy === 'recent'}
               onPress={() => setSortBy('recent')}
-            >
-              <MaterialCommunityIcons
-                name="clock-outline"
-                size={16}
-                color={sortBy === 'recent' ? colors.primary : colors.text.secondary}
-              />
-              <Text
-                style={[
-                  styles.sortButtonText,
-                  sortBy === 'recent' && styles.sortButtonTextActive,
-                ]}
-              >
-                אחרונים
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sortButton,
-                sortBy === 'popular' && styles.sortButtonActive,
-              ]}
+              activeColor={colors.lightPurple}
+              inactiveColor={colors.gray[100]}
+            />
+            <FilterChip
+              label="פופולריים"
+              icon="fire"
+              isActive={sortBy === 'popular'}
               onPress={() => setSortBy('popular')}
-            >
-              <MaterialCommunityIcons
-                name="fire"
-                size={16}
-                color={sortBy === 'popular' ? colors.primary : colors.text.secondary}
-              />
-              <Text
-                style={[
-                  styles.sortButtonText,
-                  sortBy === 'popular' && styles.sortButtonTextActive,
-                ]}
-              >
-                פופולריים
-              </Text>
-            </TouchableOpacity>
+              activeColor={colors.lightPurple}
+              inactiveColor={colors.gray[100]}
+            />
           </View>
         </View>
 
@@ -257,17 +210,11 @@ export default function ForumScreen() {
           ))}
 
           {sortedPosts.length === 0 && (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons
-                name="forum-outline"
-                size={64}
-                color={colors.text.light}
-              />
-              <Text style={styles.emptyStateText}>אין פוסטים להצגה</Text>
-              <Text style={styles.emptyStateSubtext}>
-                נסה לשנות את הסינון או החיפוש
-              </Text>
-            </View>
+            <EmptyState
+              icon="forum-outline"
+              title="אין פוסטים להצגה"
+              subtitle="נסה לשנות את הסינון או החיפוש"
+            />
           )}
         </View>
 
@@ -283,33 +230,14 @@ export default function ForumScreen() {
         onRequestClose={() => setShowNewPostModal(false)}
       >
         <Screen style={styles.modalScreen}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              onPress={() => setShowNewPostModal(false)}
-              style={styles.modalCloseButton}
-            >
-              <MaterialCommunityIcons
-                name="close"
-                size={24}
-                color={colors.text.primary}
-              />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>פוסט חדש</Text>
-            <TouchableOpacity
-              onPress={() => {
-                console.log('Save post');
-                setShowNewPostModal(false);
-              }}
-              style={styles.modalSaveButton}
-            >
-              <Text style={styles.modalSaveText}>פרסם</Text>
-            </TouchableOpacity>
-          </View>
+          <ModalHeader
+            title="פוסט חדש"
+            onClose={() => setShowNewPostModal(false)}
+            onSave={handleSavePost}
+            saveText="פרסם"
+          />
 
-          <ScrollView
-            style={styles.modalContent}
-            showsVerticalScrollIndicator={false}
-          >
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             {/* Anonymous Toggle */}
             <View style={styles.anonymousToggle}>
               <View style={styles.toggleLeft}>
@@ -320,13 +248,11 @@ export default function ForumScreen() {
                 />
                 <Text style={styles.toggleText}>פרסם באופן אנונימי</Text>
               </View>
-              <View style={styles.switch}>
-                <MaterialCommunityIcons
-                  name="toggle-switch"
-                  size={40}
-                  color={colors.primary}
-                />
-              </View>
+              <MaterialCommunityIcons
+                name="toggle-switch"
+                size={40}
+                color={colors.primary}
+              />
             </View>
 
             {/* Category Selection */}
@@ -347,12 +273,7 @@ export default function ForumScreen() {
                         { backgroundColor: category.color + '20' },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.categoryOptionText,
-                          { color: category.color },
-                        ]}
-                      >
+                      <Text style={[styles.categoryOptionText, { color: category.color }]}>
                         {category.label}
                       </Text>
                     </TouchableOpacity>
@@ -360,45 +281,27 @@ export default function ForumScreen() {
               </ScrollView>
             </View>
 
-            {/* Title Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>כותרת</Text>
-              <RNTextInput
-                style={styles.titleInput}
-                placeholder="הוסף כותרת לפוסט..."
-                placeholderTextColor={colors.text.light}
-                textAlign="left"
-              />
-            </View>
+            <FormInput
+              label="כותרת"
+              placeholder="הוסף כותרת לפוסט..."
+              value={newPostTitle}
+              onChangeText={setNewPostTitle}
+            />
 
-            {/* Content Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>תוכן הפוסט</Text>
-              <RNTextInput
-                style={styles.contentInput}
-                placeholder="שתף את המחשבות שלך עם הקהילה..."
-                placeholderTextColor={colors.text.light}
-                multiline
-                numberOfLines={10}
-                textAlign="left"
-                textAlignVertical="top"
-              />
-            </View>
+            <FormInput
+              label="תוכן הפוסט"
+              placeholder="שתף את המחשבות שלך עם הקהילה..."
+              value={newPostContent}
+              onChangeText={setNewPostContent}
+              multiline
+            />
 
-            {/* Community Guidelines */}
-            <View style={styles.guidelinesCard}>
-              <MaterialCommunityIcons
-                name="shield-check"
-                size={20}
-                color={colors.success}
-              />
-              <View style={styles.guidelinesText}>
-                <Text style={styles.guidelinesTitle}>כללי הקהילה</Text>
-                <Text style={styles.guidelinesSubtitle}>
-                  היה מכבד, תומך ואמפטי. זכור שכולנו כאן כדי לעזור אחד לשני.
-                </Text>
-              </View>
-            </View>
+            <InfoCard
+              icon="shield-check"
+              title="כללי הקהילה"
+              message="היה מכבד, תומך ואמפטי. זכור שכולנו כאן כדי לעזור אחד לשני."
+              variant="success"
+            />
           </ScrollView>
         </Screen>
       </Modal>
@@ -412,37 +315,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  headerText: {
-    flex: 1,
-    textAlign: 'left',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    textAlign: 'left',
-    
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    marginTop: 2,
-    textAlign: 'left',
   },
   newPostButton: {
     flexDirection: 'row',
@@ -465,22 +337,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.white,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.text.primary,
-  },
   sortContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -489,80 +345,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.gray[100],
-  },
-  sortButtonActive: {
-    backgroundColor: colors.lightPurple,
-  },
-  sortButtonText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-  sortButtonTextActive: {
-    color: colors.primary,
-  },
   postsContainer: {
     paddingHorizontal: 20,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.secondary,
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: colors.text.light,
-    marginTop: 8,
   },
   bottomSpacing: {
     height: 40,
   },
   modalScreen: {
     backgroundColor: colors.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  modalCloseButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  modalSaveButton: {
-    width: 60,
-    alignItems: 'flex-end',
-  },
-  modalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
   },
   modalContent: {
     flex: 1,
@@ -588,7 +378,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontWeight: '600',
   },
-  switch: {},
   inputContainer: {
     marginBottom: 20,
   },
@@ -612,48 +401,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  titleInput: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: colors.text.primary,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  contentInput: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 15,
-    color: colors.text.primary,
-    minHeight: 200,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  guidelinesCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.lightGreen,
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
-    marginBottom: 24,
-  },
-  guidelinesText: {
-    flex: 1,
-  },
-  guidelinesTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    textAlign: 'left',
-    marginBottom: 4,
-  },
-  guidelinesSubtitle: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    textAlign: 'left',
-    lineHeight: 18,
-  },
 });
-

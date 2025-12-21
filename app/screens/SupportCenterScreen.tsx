@@ -8,7 +8,8 @@ import Text from '../components/Text';
 import SupportCard from '../components/SupportCard';
 import EmergencyCard from '../components/EmergencyCard';
 import AIChatCard from '../components/AIChatCard';
-import BackButton from '../components/BackButton';
+import ScreenHeader from '../components/ScreenHeader';
+import SectionHeader from '../components/SectionHeader';
 import colors from '../config/colors';
 
 type SupportCenterScreenProps = {
@@ -80,27 +81,11 @@ const supportServices: SupportService[] = [
 export default function SupportCenterScreen({ navigation }: SupportCenterScreenProps) {
   return (
     <Screen style={styles.screen}>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <MaterialCommunityIcons
-              name="heart-outline"
-              size={32}
-              color={colors.primary}
-            />
-            <View style={styles.headerText}>
-            <View style={{alignItems: 'flex-start'}}>
-              <Text style={styles.headerTitle}>מרכז תמיכה</Text>
-            </View>
-            </View>
-      
-          </View>
-          <BackButton />
-        </View>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScreenHeader
+          icon="heart-outline"
+          title="מרכז תמיכה"
+        />
 
         {/* Top Info Card - Mental Health Hotline */}
         <View style={styles.topInfoCard}>
@@ -116,11 +101,7 @@ export default function SupportCenterScreen({ navigation }: SupportCenterScreenP
               onPress={() => console.log('Call *5765')}
               activeOpacity={0.8}
             >
-              <MaterialCommunityIcons
-                name="phone"
-                size={18}
-                color={colors.white}
-              />
+              <MaterialCommunityIcons name="phone" size={18} color={colors.white} />
               <Text style={styles.topCardPhoneText}>*5765</Text>
             </TouchableOpacity>
           </View>
@@ -131,44 +112,36 @@ export default function SupportCenterScreen({ navigation }: SupportCenterScreenP
               size={16}
               color={colors.text.secondary}
             />
-            <Text style={styles.topCardHoursText}>
-              ימים א-ה 08:00-20:00
-            </Text>
+            <Text style={styles.topCardHoursText}>ימים א-ה 08:00-20:00</Text>
           </View>
 
           <View style={styles.topCardTags}>
-            <View style={styles.topCardTag}>
-              <Text style={styles.topCardTagText}>ייעוץ</Text>
-            </View>
-            <View style={styles.topCardTag}>
-              <Text style={styles.topCardTagText}>פגישות</Text>
-            </View>
-            <View style={styles.topCardTag}>
-              <Text style={styles.topCardTagText}>מידע מקצועי</Text>
-            </View>
+            {['ייעוץ', 'פגישות', 'מידע מקצועי'].map((tag) => (
+              <View key={tag} style={styles.topCardTag}>
+                <Text style={styles.topCardTagText}>{tag}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
-        {/* AI Chat Card */}
         <AIChatCard onPress={() => console.log('Open AI Chat')} />
 
-        {/* Professional Help Section Header */}
-        <View style={styles.sectionHeader}>
-          <MaterialCommunityIcons
-            name="heart-outline"
-            size={20}
-            color={colors.primary}
-          />
-          <Text style={styles.sectionTitle}>עזרה מקצועית זמינה</Text>
-        </View>
+        <SectionHeader
+          icon={
+            <MaterialCommunityIcons
+              name="heart-outline"
+              size={20}
+              color={colors.primary}
+            />
+          }
+          title="עזרה מקצועית זמינה"
+        />
         <Text style={styles.sectionSubtitle}>
           אנשי מקצוע מוסמכים מוכנים לעזור לך. אל תיכנס לפחות - הכל בר השגה
         </Text>
 
-        {/* Emergency Card */}
         <EmergencyCard />
 
-        {/* Support Services */}
         {supportServices.map((service) => (
           <SupportCard
             key={service.id}
@@ -195,29 +168,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  headerText: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    textAlign: 'right',
   },
   topInfoCard: {
     backgroundColor: colors.cardBackground,
@@ -293,18 +243,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.text.secondary,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
   sectionSubtitle: {
     fontSize: 13,
     color: colors.text.secondary,
@@ -317,4 +255,3 @@ const styles = StyleSheet.create({
     height: 40,
   },
 });
-

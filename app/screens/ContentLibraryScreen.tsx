@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput as RNTextInput } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Text from '../components/Text';
 import ContentCard, { ContentType } from '../components/ContentCard';
-import BackButton from '../components/BackButton';
+import ScreenHeader from '../components/ScreenHeader';
+import SearchBar from '../components/SearchBar';
+import EmptyState from '../components/EmptyState';
+import FilterChip from '../components/FilterChip';
 import HelpFooterButton from '../components/HelpFooterButton';
 import colors from '../config/colors';
 
@@ -136,7 +139,11 @@ const categories = [
   'ווידאו',
 ];
 
-const quickFilters = ['סיפור עצמי', 'מדיטציה', 'נשימות להרגעה'];
+const quickFilters = [
+  { label: 'סיפור עצמי', icon: 'emoticon-happy-outline' as const, color: colors.warning, bgColor: colors.lightOrange },
+  { label: 'מדיטציה', icon: 'star-four-points' as const, color: colors.primary, bgColor: colors.lightPurple },
+  { label: 'נשימות להרגעה', icon: 'lungs' as const, color: colors.pink, bgColor: colors.lightPink },
+];
 
 export default function ContentLibraryScreen() {
   const [selectedCategory, setSelectedCategory] = useState('הכל');
@@ -168,26 +175,11 @@ export default function ContentLibraryScreen() {
   return (
     <Screen style={styles.screen}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <MaterialCommunityIcons
-              name="meditation"
-              size={32}
-              color={colors.primary}
-            />
-            <View style={styles.headerText}>
-            <View style={{alignItems: 'flex-start'}}>
-              <Text style={styles.headerTitle}>תכנים מרגיעים</Text>
-              <Text style={styles.headerSubtitle}>
-                תרגילי נשימה, מדיטציה, יוגה ועוד - התאמה אישית לכל מצב הרוח שלך
-              </Text>
-            </View>
-            </View>
-            <BackButton />     
-          </View>
-       
-        </View>
+        <ScreenHeader
+          icon="meditation"
+          title="תכנים מרגיעים"
+          subtitle="תרגילי נשימה, מדיטציה, יוגה ועוד - התאמה אישית לכל מצב הרוח שלך"
+        />
 
         {/* Quick Filters */}
         <View style={styles.quickFiltersContainer}>
@@ -196,51 +188,30 @@ export default function ContentLibraryScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.quickFilters}
           >
-            {quickFilters.map((filter, index) => {
-              const isActive = selectedQuickFilter === filter;
-              const buttonColors = [
-                colors.lightOrange,
-                colors.lightPurple,
-                colors.lightPink,
-              ];
-              const textColors = [colors.warning, colors.primary, colors.pink];
-
+            {quickFilters.map((filter) => {
+              const isActive = selectedQuickFilter === filter.label;
               return (
                 <TouchableOpacity
-                  key={filter}
+                  key={filter.label}
                   style={[
                     styles.quickFilterButton,
-                    {
-                      backgroundColor: isActive
-                        ? textColors[index]
-                        : buttonColors[index],
-                    },
+                    { backgroundColor: isActive ? filter.color : filter.bgColor },
                   ]}
-                  onPress={() =>
-                    setSelectedQuickFilter(isActive ? null : filter)
-                  }
+                  onPress={() => setSelectedQuickFilter(isActive ? null : filter.label)}
                   activeOpacity={0.7}
                 >
                   <MaterialCommunityIcons
-                    name={
-                      index === 0
-                        ? 'emoticon-happy-outline'
-                        : index === 1
-                        ? 'star-four-points'
-                        : 'lungs'
-                    }
+                    name={filter.icon}
                     size={18}
-                    color={isActive ? colors.white : textColors[index]}
+                    color={isActive ? colors.white : filter.color}
                   />
                   <Text
                     style={[
                       styles.quickFilterText,
-                      {
-                        color: isActive ? colors.white : textColors[index],
-                      },
+                      { color: isActive ? colors.white : filter.color },
                     ]}
                   >
-                    {filter}
+                    {filter.label}
                   </Text>
                 </TouchableOpacity>
               );
@@ -253,11 +224,7 @@ export default function ContentLibraryScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>✨ מומלץ עבורך</Text>
             <TouchableOpacity style={styles.refreshButton}>
-              <MaterialCommunityIcons
-                name="refresh"
-                size={20}
-                color={colors.primary}
-              />
+              <MaterialCommunityIcons name="refresh" size={20} color={colors.primary} />
               <Text style={styles.refreshText}>רענן</Text>
             </TouchableOpacity>
           </View>
@@ -280,34 +247,11 @@ export default function ContentLibraryScreen() {
           </ScrollView>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={20}
-            color={colors.text.secondary}
-          />
-          <RNTextInput
-            style={styles.searchInput}
-            placeholder="חיפוש בתכנים..."
-            placeholderTextColor={colors.text.light}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            textAlign="right"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery('')}
-              style={styles.clearButton}
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={20}
-                color={colors.text.secondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="חיפוש בתכנים..."
+        />
 
         {/* Category Tabs */}
         <View style={styles.categoryTabsContainer}>
@@ -316,29 +260,16 @@ export default function ContentLibraryScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoryTabs}
           >
-            {categories.map((category) => {
-              const isActive = selectedCategory === category;
-              return (
-                <TouchableOpacity
-                  key={category}
-                  style={[
-                    styles.categoryTab,
-                    isActive && styles.categoryTabActive,
-                  ]}
-                  onPress={() => setSelectedCategory(category)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.categoryTabText,
-                      isActive && styles.categoryTabTextActive,
-                    ]}
-                  >
-                    {category}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {categories.map((category) => (
+              <FilterChip
+                key={category}
+                label={category}
+                isActive={selectedCategory === category}
+                onPress={() => setSelectedCategory(category)}
+                activeColor={colors.warning}
+                inactiveColor={colors.gray[100]}
+              />
+            ))}
           </ScrollView>
         </View>
 
@@ -360,17 +291,11 @@ export default function ContentLibraryScreen() {
           ))}
 
           {filteredContent.length === 0 && (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons
-                name="meditation"
-                size={64}
-                color={colors.text.light}
-              />
-              <Text style={styles.emptyStateText}>אין תכנים להצגה</Text>
-              <Text style={styles.emptyStateSubtext}>
-                נסה לשנות את הסינון
-              </Text>
-            </View>
+            <EmptyState
+              icon="meditation"
+              title="אין תכנים להצגה"
+              subtitle="נסה לשנות את הסינון"
+            />
           )}
         </View>
 
@@ -387,38 +312,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  headerText: {
-   flex: 1,
-   textAlign: 'right',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    marginBottom: 6,
-    textAlign: 'right',
-
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 20,
-
-    alignItems: 'flex-start'
   },
   quickFiltersContainer: {
     marginBottom: 20,
@@ -475,30 +368,6 @@ const styles = StyleSheet.create({
     width: 300,
     marginLeft: 16,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  clearButton: {
-    padding: 4,
-  },
   categoryTabsContainer: {
     marginBottom: 20,
   },
@@ -506,40 +375,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 8,
   },
-  categoryTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.gray[100],
-  },
-  categoryTabActive: {
-    backgroundColor: colors.warning,
-  },
-  categoryTabText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-  categoryTabTextActive: {
-    color: colors.white,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.secondary,
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: colors.text.light,
-    marginTop: 8,
-  },
   bottomSpacing: {
     height: 40,
   },
 });
-
