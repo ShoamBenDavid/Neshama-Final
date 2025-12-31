@@ -1,42 +1,60 @@
-import React, { ReactNode } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Text from './Text';
 import BackButton from './BackButton';
 import colors from '../config/colors';
 
 interface ScreenHeaderProps {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  icon?: React.ReactNode;
+  iconName?: keyof typeof MaterialCommunityIcons.glyphMap;
+  iconColor?: string;
   title: string;
   subtitle?: string;
   showBackButton?: boolean;
-  rightAction?: ReactNode;
+  rightContent?: React.ReactNode;
+  style?: ViewStyle;
 }
 
 export default function ScreenHeader({
   icon,
+  iconName,
+  iconColor = colors.primary,
   title,
   subtitle,
   showBackButton = true,
-  rightAction,
+  rightContent,
+  style,
 }: ScreenHeaderProps) {
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
+  const renderIcon = () => {
+    if (icon) return icon;
+    if (iconName) {
+      return (
         <MaterialCommunityIcons
-          name={icon}
+          name={iconName}
           size={32}
-          color={colors.primary}
+          color={iconColor}
         />
+      );
+    }
+    return null;
+  };
+
+  return (
+    <View style={[styles.header, style]}>
+      <View style={styles.headerContent}>
+        {renderIcon()}
         <View style={styles.headerText}>
-          <Text style={styles.headerTitle}>{title}</Text>
-          {subtitle && (
-            <Text style={styles.headerSubtitle}>{subtitle}</Text>
-          )}
+          <View style={styles.textContainer}>
+            <Text style={styles.headerTitle}>{title}</Text>
+            {subtitle && (
+              <Text style={styles.headerSubtitle}>{subtitle}</Text>
+            )}
+          </View>
         </View>
       </View>
-      <View style={styles.headerActions}>
-        {rightAction}
+      <View style={styles.rightSection}>
+        {rightContent}
         {showBackButton && <BackButton />}
       </View>
     </View>
@@ -60,6 +78,8 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  textContainer: {
     alignItems: 'flex-start',
   },
   headerTitle: {
@@ -73,11 +93,13 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 2,
     textAlign: 'left',
+    lineHeight: 20,
   },
-  headerActions: {
+  rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
 });
+
 

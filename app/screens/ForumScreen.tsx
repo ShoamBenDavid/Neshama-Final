@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Text from '../components/Text';
@@ -8,10 +14,10 @@ import ForumPostCard from '../components/ForumPostCard';
 import ScreenHeader from '../components/ScreenHeader';
 import SearchBar from '../components/SearchBar';
 import ModalHeader from '../components/ModalHeader';
-import EmptyState from '../components/EmptyState';
 import FormInput from '../components/FormInput';
-import InfoCard from '../components/InfoCard';
-import FilterChip from '../components/FilterChip';
+import InfoBanner from '../components/InfoBanner';
+import FilterChipList, { FilterChip } from '../components/FilterChipList';
+import EmptyState from '../components/EmptyState';
 import HelpFooterButton from '../components/HelpFooterButton';
 import colors from '../config/colors';
 
@@ -46,6 +52,11 @@ const categoryColors: { [key: string]: string } = {
   'work-stress': colors.danger,
   success: colors.success,
 };
+
+const sortChips: FilterChip[] = [
+  { id: 'recent', label: 'אחרונים', icon: 'clock-outline', color: colors.text.secondary, activeColor: colors.primary, backgroundColor: colors.gray[100] },
+  { id: 'popular', label: 'פופולריים', icon: 'fire', color: colors.text.secondary, activeColor: colors.primary, backgroundColor: colors.gray[100] },
+];
 
 // Sample posts
 const samplePosts: ForumPost[] = [
@@ -104,7 +115,7 @@ export default function ForumScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewPostModal, setShowNewPostModal] = useState(false);
-  const [sortBy, setSortBy] = useState<'recent' | 'popular'>('recent');
+  const [sortBy, setSortBy] = useState<string>('recent');
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
 
@@ -124,7 +135,7 @@ export default function ForumScreen() {
     if (sortBy === 'popular') {
       return b.likes - a.likes;
     }
-    return 0;
+    return 0; // Keep original order for recent
   });
 
   const getCategoryInfo = (categoryId: string) => {
@@ -145,9 +156,13 @@ export default function ForumScreen() {
 
   return (
     <Screen style={styles.screen}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
         <ScreenHeader
-          icon="account-group"
+          iconName="account-group"
           title="קהילת התמיכה"
           subtitle="שתף, שאל, ותמוך - יחד אנחנו חזקים יותר"
         />
@@ -162,12 +177,14 @@ export default function ForumScreen() {
           <Text style={styles.newPostButtonText}>פוסט חדש</Text>
         </TouchableOpacity>
 
+        {/* Search Bar */}
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="חיפוש בפורום..."
         />
 
+        {/* Category Tabs */}
         <CategoryTabs
           categories={categories}
           selectedCategory={selectedCategory}
@@ -176,24 +193,13 @@ export default function ForumScreen() {
 
         {/* Sort Options */}
         <View style={styles.sortContainer}>
-          <View style={styles.sortButtons}>
-            <FilterChip
-              label="אחרונים"
-              icon="clock-outline"
-              isActive={sortBy === 'recent'}
-              onPress={() => setSortBy('recent')}
-              activeColor={colors.lightPurple}
-              inactiveColor={colors.gray[100]}
-            />
-            <FilterChip
-              label="פופולריים"
-              icon="fire"
-              isActive={sortBy === 'popular'}
-              onPress={() => setSortBy('popular')}
-              activeColor={colors.lightPurple}
-              inactiveColor={colors.gray[100]}
-            />
-          </View>
+          <FilterChipList
+            chips={sortChips}
+            selectedId={sortBy}
+            onSelect={(id) => setSortBy(id || 'recent')}
+            allowDeselect={false}
+            style={styles.sortChips}
+          />
         </View>
 
         {/* Posts List */}
@@ -211,7 +217,7 @@ export default function ForumScreen() {
 
           {sortedPosts.length === 0 && (
             <EmptyState
-              icon="forum-outline"
+              iconName="forum-outline"
               title="אין פוסטים להצגה"
               subtitle="נסה לשנות את הסינון או החיפוש"
             />
@@ -237,7 +243,10 @@ export default function ForumScreen() {
             saveText="פרסם"
           />
 
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Anonymous Toggle */}
             <View style={styles.anonymousToggle}>
               <View style={styles.toggleLeft}>
@@ -248,11 +257,13 @@ export default function ForumScreen() {
                 />
                 <Text style={styles.toggleText}>פרסם באופן אנונימי</Text>
               </View>
-              <MaterialCommunityIcons
-                name="toggle-switch"
-                size={40}
-                color={colors.primary}
-              />
+              <View style={styles.switch}>
+                <MaterialCommunityIcons
+                  name="toggle-switch"
+                  size={40}
+                  color={colors.primary}
+                />
+              </View>
             </View>
 
             {/* Category Selection */}
@@ -273,7 +284,12 @@ export default function ForumScreen() {
                         { backgroundColor: category.color + '20' },
                       ]}
                     >
-                      <Text style={[styles.categoryOptionText, { color: category.color }]}>
+                      <Text
+                        style={[
+                          styles.categoryOptionText,
+                          { color: category.color },
+                        ]}
+                      >
                         {category.label}
                       </Text>
                     </TouchableOpacity>
@@ -281,6 +297,7 @@ export default function ForumScreen() {
               </ScrollView>
             </View>
 
+            {/* Title Input */}
             <FormInput
               label="כותרת"
               placeholder="הוסף כותרת לפוסט..."
@@ -288,19 +305,24 @@ export default function ForumScreen() {
               onChangeText={setNewPostTitle}
             />
 
+            {/* Content Input */}
             <FormInput
               label="תוכן הפוסט"
               placeholder="שתף את המחשבות שלך עם הקהילה..."
               value={newPostContent}
               onChangeText={setNewPostContent}
               multiline
+              numberOfLines={10}
+              minHeight={200}
             />
 
-            <InfoCard
-              icon="shield-check"
+            {/* Community Guidelines */}
+            <InfoBanner
+              iconName="shield-check"
+              iconColor={colors.success}
+              backgroundColor={colors.lightGreen}
               title="כללי הקהילה"
               message="היה מכבד, תומך ואמפטי. זכור שכולנו כאן כדי לעזור אחד לשני."
-              variant="success"
             />
           </ScrollView>
         </Screen>
@@ -338,12 +360,10 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   sortContainer: {
-    paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  sortButtons: {
-    flexDirection: 'row',
-    gap: 8,
+  sortChips: {
+    marginBottom: 0,
   },
   postsContainer: {
     paddingHorizontal: 20,
@@ -378,6 +398,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontWeight: '600',
   },
+  switch: {},
   inputContainer: {
     marginBottom: 20,
   },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../config/colors';
 
@@ -8,6 +8,7 @@ interface SearchBarProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   showClearButton?: boolean;
+  style?: ViewStyle;
 }
 
 export default function SearchBar({
@@ -15,9 +16,10 @@ export default function SearchBar({
   onChangeText,
   placeholder = 'חיפוש...',
   showClearButton = true,
+  style,
 }: SearchBarProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <MaterialCommunityIcons
         name="magnify"
         size={20}
@@ -73,4 +75,5 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 });
+
 

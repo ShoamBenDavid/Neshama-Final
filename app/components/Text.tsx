@@ -9,7 +9,7 @@ interface TextProps extends RNTextProps {
 
 export default function AppText({ children, style, ...otherProps }: TextProps) {
   return (
-    <Text style={[defaultStyles.textPrimary, style]} {...otherProps}>
+    <Text style={[defaultStyles.text, style]} {...otherProps}>
       {children}
     </Text>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Text from './Text';
 import colors from '../config/colors';
@@ -10,6 +10,7 @@ interface ModalHeaderProps {
   onSave?: () => void;
   saveText?: string;
   saveDisabled?: boolean;
+  style?: ViewStyle;
 }
 
 export default function ModalHeader({
@@ -18,10 +19,14 @@ export default function ModalHeader({
   onSave,
   saveText = 'שמור',
   saveDisabled = false,
+  style,
 }: ModalHeaderProps) {
   return (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+    <View style={[styles.container, style]}>
+      <TouchableOpacity
+        onPress={onClose}
+        style={styles.closeButton}
+      >
         <MaterialCommunityIcons
           name="close"
           size={24}
@@ -45,14 +50,14 @@ export default function ModalHeader({
           </Text>
         </TouchableOpacity>
       ) : (
-        <View style={styles.saveButton} />
+        <View style={styles.placeholder} />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
+  container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -86,5 +91,9 @@ const styles = StyleSheet.create({
   saveTextDisabled: {
     color: colors.text.light,
   },
+  placeholder: {
+    width: 60,
+  },
 });
+
 

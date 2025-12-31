@@ -6,8 +6,8 @@ import Text from '../components/Text';
 import ContentCard, { ContentType } from '../components/ContentCard';
 import ScreenHeader from '../components/ScreenHeader';
 import SearchBar from '../components/SearchBar';
+import FilterChipList, { FilterChip } from '../components/FilterChipList';
 import EmptyState from '../components/EmptyState';
-import FilterChip from '../components/FilterChip';
 import HelpFooterButton from '../components/HelpFooterButton';
 import colors from '../config/colors';
 
@@ -127,22 +127,22 @@ const sampleContent: ContentItem[] = [
   },
 ];
 
-const categories = [
-  'הכל',
-  'הקלה מתחרה',
-  'שינה',
-  'לחץ',
-  'מיינדפולנס',
-  'סיפור עצמי',
-  'יוגה',
-  'אומרים',
-  'ווידאו',
+const quickFilters: FilterChip[] = [
+  { id: 'סיפור עצמי', label: 'סיפור עצמי', icon: 'emoticon-happy-outline', color: colors.warning, backgroundColor: colors.lightOrange },
+  { id: 'מדיטציה', label: 'מדיטציה', icon: 'star-four-points', color: colors.primary, backgroundColor: colors.lightPurple },
+  { id: 'נשימות להרגעה', label: 'נשימות להרגעה', icon: 'lungs', color: colors.pink, backgroundColor: colors.lightPink },
 ];
 
-const quickFilters = [
-  { label: 'סיפור עצמי', icon: 'emoticon-happy-outline' as const, color: colors.warning, bgColor: colors.lightOrange },
-  { label: 'מדיטציה', icon: 'star-four-points' as const, color: colors.primary, bgColor: colors.lightPurple },
-  { label: 'נשימות להרגעה', icon: 'lungs' as const, color: colors.pink, bgColor: colors.lightPink },
+const categoryChips: FilterChip[] = [
+  { id: 'הכל', label: 'הכל', activeColor: colors.warning },
+  { id: 'הקלה מתחרה', label: 'הקלה מתחרה', activeColor: colors.warning },
+  { id: 'שינה', label: 'שינה', activeColor: colors.warning },
+  { id: 'לחץ', label: 'לחץ', activeColor: colors.warning },
+  { id: 'מיינדפולנס', label: 'מיינדפולנס', activeColor: colors.warning },
+  { id: 'סיפור עצמי', label: 'סיפור עצמי', activeColor: colors.warning },
+  { id: 'יוגה', label: 'יוגה', activeColor: colors.warning },
+  { id: 'אומרים', label: 'אומרים', activeColor: colors.warning },
+  { id: 'ווידאו', label: 'ווידאו', activeColor: colors.warning },
 ];
 
 export default function ContentLibraryScreen() {
@@ -175,56 +175,30 @@ export default function ContentLibraryScreen() {
   return (
     <Screen style={styles.screen}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
         <ScreenHeader
-          icon="meditation"
+          iconName="meditation"
           title="תכנים מרגיעים"
           subtitle="תרגילי נשימה, מדיטציה, יוגה ועוד - התאמה אישית לכל מצב הרוח שלך"
         />
 
         {/* Quick Filters */}
-        <View style={styles.quickFiltersContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.quickFilters}
-          >
-            {quickFilters.map((filter) => {
-              const isActive = selectedQuickFilter === filter.label;
-              return (
-                <TouchableOpacity
-                  key={filter.label}
-                  style={[
-                    styles.quickFilterButton,
-                    { backgroundColor: isActive ? filter.color : filter.bgColor },
-                  ]}
-                  onPress={() => setSelectedQuickFilter(isActive ? null : filter.label)}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons
-                    name={filter.icon}
-                    size={18}
-                    color={isActive ? colors.white : filter.color}
-                  />
-                  <Text
-                    style={[
-                      styles.quickFilterText,
-                      { color: isActive ? colors.white : filter.color },
-                    ]}
-                  >
-                    {filter.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        <FilterChipList
+          chips={quickFilters}
+          selectedId={selectedQuickFilter}
+          onSelect={(id) => setSelectedQuickFilter(id)}
+        />
 
         {/* Recommended Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>✨ מומלץ עבורך</Text>
             <TouchableOpacity style={styles.refreshButton}>
-              <MaterialCommunityIcons name="refresh" size={20} color={colors.primary} />
+              <MaterialCommunityIcons
+                name="refresh"
+                size={20}
+                color={colors.primary}
+              />
               <Text style={styles.refreshText}>רענן</Text>
             </TouchableOpacity>
           </View>
@@ -247,6 +221,7 @@ export default function ContentLibraryScreen() {
           </ScrollView>
         </View>
 
+        {/* Search Bar */}
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -254,24 +229,12 @@ export default function ContentLibraryScreen() {
         />
 
         {/* Category Tabs */}
-        <View style={styles.categoryTabsContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryTabs}
-          >
-            {categories.map((category) => (
-              <FilterChip
-                key={category}
-                label={category}
-                isActive={selectedCategory === category}
-                onPress={() => setSelectedCategory(category)}
-                activeColor={colors.warning}
-                inactiveColor={colors.gray[100]}
-              />
-            ))}
-          </ScrollView>
-        </View>
+        <FilterChipList
+          chips={categoryChips}
+          selectedId={selectedCategory}
+          onSelect={(id) => setSelectedCategory(id || 'הכל')}
+          allowDeselect={false}
+        />
 
         {/* All Content Section */}
         <View style={styles.section}>
@@ -292,7 +255,7 @@ export default function ContentLibraryScreen() {
 
           {filteredContent.length === 0 && (
             <EmptyState
-              icon="meditation"
+              iconName="meditation"
               title="אין תכנים להצגה"
               subtitle="נסה לשנות את הסינון"
             />
@@ -312,25 +275,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-  },
-  quickFiltersContainer: {
-    marginBottom: 20,
-  },
-  quickFilters: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  quickFilterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  quickFilterText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   section: {
     paddingHorizontal: 20,
@@ -367,13 +311,6 @@ const styles = StyleSheet.create({
   horizontalCard: {
     width: 300,
     marginLeft: 16,
-  },
-  categoryTabsContainer: {
-    marginBottom: 20,
-  },
-  categoryTabs: {
-    paddingHorizontal: 20,
-    gap: 8,
   },
   bottomSpacing: {
     height: 40,

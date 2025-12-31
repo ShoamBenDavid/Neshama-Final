@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, I18nManager, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, I18nManager } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/StackNavigator';
@@ -10,6 +10,7 @@ import ProgressBar from '../components/ProgressBar';
 import ActionCard from '../components/ActionCard';
 import SectionHeader from '../components/SectionHeader';
 import HelpFooterButton from '../components/HelpFooterButton';
+import MoodChart from '../components/MoodChart';
 import colors from '../config/colors';
 
 // Enable RTL layout for Hebrew
@@ -20,7 +21,100 @@ type DashboardScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 };
 
+// Stats data configuration
+const statsData = [
+  {
+    iconName: 'shield-check' as const,
+    value: '1',
+    label: 'הפרעות חרדה',
+    iconColor: colors.blue,
+  },
+  {
+    iconName: 'calendar' as const,
+    value: '7/7',
+    label: 'רצפת השבוע',
+    iconColor: colors.orange,
+  },
+  {
+    iconName: 'chart-line' as const,
+    value: '29%',
+    label: 'הפחתה בחרדה משמעותית',
+    iconColor: colors.primary,
+  },
+  {
+    iconName: 'heart-outline' as const,
+    value: '5.9/10',
+    label: 'מצב רוח ממוצע',
+    iconColor: colors.green,
+  },
+];
+
+// Progress bars data
+const progressData = [
+  {
+    iconName: 'heart-outline' as const,
+    label: 'מצב רוח ממוצע',
+    value: '5.9/10',
+    progress: 59,
+    color: colors.green,
+  },
+  {
+    iconName: 'alert-circle-outline' as const,
+    label: 'רמת חרדה ממוצעת',
+    value: '29%',
+    progress: 29,
+    color: colors.primary,
+  },
+];
+
+// Chart legend data
+const chartLegendData = [
+  { label: 'גבוהה 9', backgroundColor: colors.lightGreen },
+  { label: 'ממוצע 5.9', backgroundColor: colors.lightOrange },
+  { label: 'נמוכה 2', backgroundColor: colors.lightPink },
+];
+
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
+  // Action cards configuration
+  const actionCards = [
+    [
+      {
+        iconName: 'account-group' as const,
+        title: 'פורום קהילתי',
+        subtitle: 'שיתוף חוויות',
+        backgroundColor: colors.lightPink,
+        iconColor: colors.pink,
+        onPress: () => navigation.navigate('Forum'),
+      },
+      {
+        iconName: 'meditation' as const,
+        title: 'תכנים מרגיעים',
+        subtitle: 'תרגילים ותחזיותיות',
+        backgroundColor: colors.lightOrange,
+        iconColor: colors.orange,
+        onPress: () => navigation.navigate('ContentLibrary'),
+      },
+    ],
+    [
+      {
+        iconName: 'message-text' as const,
+        title: 'שיחת תומכת',
+        subtitle: 'ייעוץ עם AI או עוזר',
+        backgroundColor: colors.lightTeal,
+        iconColor: colors.teal,
+        onPress: () => console.log('Chat'),
+      },
+      {
+        iconName: 'book-open' as const,
+        title: 'יומן רגשי',
+        subtitle: 'תעד את הרגשות שלך',
+        backgroundColor: colors.lightPurple,
+        iconColor: colors.primary,
+        onPress: () => navigation.navigate('Journal'),
+      },
+    ],
+  ];
+
   return (
     <Screen style={styles.screen}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -67,54 +161,22 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           style={styles.statsContainer}
           contentContainerStyle={styles.statsContent}
         >
-          <StatCard
-            icon={
-              <MaterialCommunityIcons
-                name="shield-check"
-                size={24}
-                color={colors.white}
-              />
-            }
-            value="1"
-            label="הפרעות חרדה"
-            backgroundColor={colors.cardBackground}
-            iconColor={colors.blue}
-          />
-          <StatCard
-            icon={
-              <MaterialCommunityIcons name="calendar" size={24} color={colors.white} />
-            }
-            value="7/7"
-            label="רצפת השבוע"
-            backgroundColor={colors.cardBackground}
-            iconColor={colors.orange}
-          />
-          <StatCard
-            icon={
-              <MaterialCommunityIcons
-                name="chart-line"
-                size={24}
-                color={colors.white}
-              />
-            }
-            value="29%"
-            label="הפחתה בחרדה משמעותית"
-            backgroundColor={colors.cardBackground}
-            iconColor={colors.primary}
-          />
-          <StatCard
-            icon={
-              <MaterialCommunityIcons
-                name="heart-outline"
-                size={24}
-                color={colors.white}
-              />
-            }
-            value="5.9/10"
-            label="מצב רוח ממוצע"
-            backgroundColor={colors.cardBackground}
-            iconColor={colors.green}
-          />
+          {statsData.map((stat, index) => (
+            <StatCard
+              key={index}
+              icon={
+                <MaterialCommunityIcons
+                  name={stat.iconName}
+                  size={24}
+                  color={colors.white}
+                />
+              }
+              value={stat.value}
+              label={stat.label}
+              backgroundColor={colors.cardBackground}
+              iconColor={stat.iconColor}
+            />
+          ))}
         </ScrollView>
 
         {/* Weekly Summary Section */}
@@ -130,32 +192,22 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             title="סיכום שבועי"
           />
           <View style={styles.summaryCard}>
-            <ProgressBar
-              icon={
-                <MaterialCommunityIcons
-                  name="heart-outline"
-                  size={16}
-                  color={colors.text.secondary}
-                />
-              }
-              label="מצב רוח ממוצע"
-              value="5.9/10"
-              progress={59}
-              color={colors.green}
-            />
-            <ProgressBar
-              icon={
-                <MaterialCommunityIcons
-                  name="alert-circle-outline"
-                  size={16}
-                  color={colors.text.secondary}
-                />
-              }
-              label="רמת חרדה ממוצעת"
-              value="29%"
-              progress={29}
-              color={colors.primary}
-            />
+            {progressData.map((item, index) => (
+              <ProgressBar
+                key={index}
+                icon={
+                  <MaterialCommunityIcons
+                    name={item.iconName}
+                    size={16}
+                    color={colors.text.secondary}
+                  />
+                }
+                label={item.label}
+                value={item.value}
+                progress={item.progress}
+                color={item.color}
+              />
+            ))}
             <View style={styles.streakContainer}>
               <Text style={styles.streakText}>🔥</Text>
               <View>
@@ -168,62 +220,27 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
         {/* Action Cards Grid */}
         <View style={styles.section}>
-          <View style={styles.actionsGrid}>
-            <ActionCard
-              icon={
-                <MaterialCommunityIcons
-                  name="account-group"
-                  size={24}
-                  color={colors.white}
+          {actionCards.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.actionsGrid}>
+              {row.map((card, cardIndex) => (
+                <ActionCard
+                  key={cardIndex}
+                  icon={
+                    <MaterialCommunityIcons
+                      name={card.iconName}
+                      size={24}
+                      color={colors.white}
+                    />
+                  }
+                  title={card.title}
+                  subtitle={card.subtitle}
+                  backgroundColor={card.backgroundColor}
+                  iconColor={card.iconColor}
+                  onPress={card.onPress}
                 />
-              }
-              title="פורום קהילתי"
-              subtitle="שיתוף חוויות"
-              backgroundColor={colors.lightPink}
-              iconColor={colors.pink}
-              onPress={() => navigation.navigate('Forum')}
-            />
-            <ActionCard
-              icon={
-                <MaterialCommunityIcons
-                  name="meditation"
-                  size={24}
-                  color={colors.white}
-                />
-              }
-              title="תכנים מרגיעים"
-              subtitle="תרגילים ותחזיותיות"
-              backgroundColor={colors.lightOrange}
-              iconColor={colors.orange}
-              onPress={() => navigation.navigate('ContentLibrary')}
-            />
-          </View>
-          <View style={styles.actionsGrid}>
-            <ActionCard
-              icon={
-                <MaterialCommunityIcons
-                  name="message-text"
-                  size={24}
-                  color={colors.white}
-                />
-              }
-              title="שיחת תומכת"
-              subtitle="ייעוץ עם AI או עוזר"
-              backgroundColor={colors.lightTeal}
-              iconColor={colors.teal}
-              onPress={() => console.log('Chat')}
-            />
-            <ActionCard
-              icon={
-                <MaterialCommunityIcons name="book-open" size={24} color={colors.white} />
-              }
-              title="יומן רגשי"
-              subtitle="תעד את הרגשות שלך"
-              backgroundColor={colors.lightPurple}
-              iconColor={colors.primary}
-              onPress={() => navigation.navigate('Journal')}
-            />
-          </View>
+              ))}
+            </View>
+          ))}
         </View>
 
         {/* Mood Chart Section */}
@@ -242,22 +259,17 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             <View style={styles.chartHeader}>
               <Text style={styles.chartPeriod}>14 ימים אחרונים</Text>
               <View style={styles.chartLegend}>
-                <View style={[styles.legendItem, { backgroundColor: colors.lightGreen }]}>
-                  <Text style={styles.legendText}>גבוהה 9</Text>
-                </View>
-                <View style={[styles.legendItem, { backgroundColor: colors.lightOrange }]}>
-                  <Text style={styles.legendText}>ממוצע 5.9</Text>
-                </View>
-                <View style={[styles.legendItem, { backgroundColor: colors.lightPink }]}>
-                  <Text style={styles.legendText}>נמוכה 2</Text>
-                </View>
+                {chartLegendData.map((item, index) => (
+                  <View
+                    key={index}
+                    style={[styles.legendItem, { backgroundColor: item.backgroundColor }]}
+                  >
+                    <Text style={styles.legendText}>{item.label}</Text>
+                  </View>
+                ))}
               </View>
             </View>
-            <View style={styles.chartPlaceholder}>
-              <Text style={styles.chartPlaceholderText}>
-                [גרף מצב רוח - ניתן להוסיף ספריית גרפים]
-              </Text>
-            </View>
+            <MoodChart />
           </View>
         </View>
 
@@ -412,19 +424,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontWeight: '600',
   },
-  chartPlaceholder: {
-    height: 200,
-    backgroundColor: colors.gray[50],
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chartPlaceholderText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-  },
   bottomSpacing: {
     height: 40,
   },
 });
-

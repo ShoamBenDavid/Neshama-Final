@@ -81,9 +81,13 @@ const supportServices: SupportService[] = [
 export default function SupportCenterScreen({ navigation }: SupportCenterScreenProps) {
   return (
     <Screen style={styles.screen}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
         <ScreenHeader
-          icon="heart-outline"
+          iconName="heart-outline"
           title="מרכז תמיכה"
         />
 
@@ -101,7 +105,11 @@ export default function SupportCenterScreen({ navigation }: SupportCenterScreenP
               onPress={() => console.log('Call *5765')}
               activeOpacity={0.8}
             >
-              <MaterialCommunityIcons name="phone" size={18} color={colors.white} />
+              <MaterialCommunityIcons
+                name="phone"
+                size={18}
+                color={colors.white}
+              />
               <Text style={styles.topCardPhoneText}>*5765</Text>
             </TouchableOpacity>
           </View>
@@ -112,36 +120,48 @@ export default function SupportCenterScreen({ navigation }: SupportCenterScreenP
               size={16}
               color={colors.text.secondary}
             />
-            <Text style={styles.topCardHoursText}>ימים א-ה 08:00-20:00</Text>
+            <Text style={styles.topCardHoursText}>
+              ימים א-ה 08:00-20:00
+            </Text>
           </View>
 
           <View style={styles.topCardTags}>
-            {['ייעוץ', 'פגישות', 'מידע מקצועי'].map((tag) => (
-              <View key={tag} style={styles.topCardTag}>
-                <Text style={styles.topCardTagText}>{tag}</Text>
-              </View>
-            ))}
+            <View style={styles.topCardTag}>
+              <Text style={styles.topCardTagText}>ייעוץ</Text>
+            </View>
+            <View style={styles.topCardTag}>
+              <Text style={styles.topCardTagText}>פגישות</Text>
+            </View>
+            <View style={styles.topCardTag}>
+              <Text style={styles.topCardTagText}>מידע מקצועי</Text>
+            </View>
           </View>
         </View>
 
+        {/* AI Chat Card */}
         <AIChatCard onPress={() => console.log('Open AI Chat')} />
 
-        <SectionHeader
-          icon={
-            <MaterialCommunityIcons
-              name="heart-outline"
-              size={20}
-              color={colors.primary}
-            />
-          }
-          title="עזרה מקצועית זמינה"
-        />
+        {/* Professional Help Section Header */}
+        <View style={styles.sectionHeaderContainer}>
+          <SectionHeader
+            icon={
+              <MaterialCommunityIcons
+                name="heart-outline"
+                size={20}
+                color={colors.primary}
+              />
+            }
+            title="עזרה מקצועית זמינה"
+          />
+        </View>
         <Text style={styles.sectionSubtitle}>
           אנשי מקצוע מוסמכים מוכנים לעזור לך. אל תיכנס לפחות - הכל בר השגה
         </Text>
 
+        {/* Emergency Card */}
         <EmergencyCard />
 
+        {/* Support Services */}
         {supportServices.map((service) => (
           <SupportCard
             key={service.id}
@@ -219,10 +239,10 @@ const styles = StyleSheet.create({
   },
   topCardHours: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 6,
     marginBottom: 12,
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
   },
   topCardHoursText: {
     fontSize: 12,
@@ -243,12 +263,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.text.secondary,
   },
+  sectionHeaderContainer: {
+    paddingHorizontal: 20,
+  },
   sectionSubtitle: {
     fontSize: 13,
     color: colors.text.secondary,
     paddingHorizontal: 20,
     marginBottom: 20,
-    textAlign: 'right',
+    textAlign: 'left',
     lineHeight: 20,
   },
   bottomSpacing: {
