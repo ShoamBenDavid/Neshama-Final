@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet, I18nManager, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, ScrollView, StyleSheet, I18nManager, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/StackNavigator';
@@ -14,6 +14,7 @@ import MoodChart from '../components/MoodChart';
 import colors from '../config/colors';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutUser } from '../store/slices/authSlice';
+import { fetchJournalStats } from '../store/slices/journalSlice';
 
 // Enable RTL layout for Hebrew
 I18nManager.allowRTL(true);
@@ -23,62 +24,14 @@ type DashboardScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 };
 
-// Stats data configuration
-const statsData = [
-  {
-    iconName: 'shield-check' as const,
-    value: '1',
-    label: 'הפרעות חרדה',
-    iconColor: colors.blue,
-  },
-  {
-    iconName: 'calendar' as const,
-    value: '7/7',
-    label: 'רצפת השבוע',
-    iconColor: colors.orange,
-  },
-  {
-    iconName: 'chart-line' as const,
-    value: '29%',
-    label: 'הפחתה בחרדה משמעותית',
-    iconColor: colors.primary,
-  },
-  {
-    iconName: 'heart-outline' as const,
-    value: '5.9/10',
-    label: 'מצב רוח ממוצע',
-    iconColor: colors.green,
-  },
-];
-
-// Progress bars data
-const progressData = [
-  {
-    iconName: 'heart-outline' as const,
-    label: 'מצב רוח ממוצע',
-    value: '5.9/10',
-    progress: 59,
-    color: colors.green,
-  },
-  {
-    iconName: 'alert-circle-outline' as const,
-    label: 'רמת חרדה ממוצעת',
-    value: '29%',
-    progress: 29,
-    color: colors.primary,
-  },
-];
-
-// Chart legend data
-const chartLegendData = [
-  { label: 'גבוהה 9', backgroundColor: colors.lightGreen },
-  { label: 'ממוצע 5.9', backgroundColor: colors.lightOrange },
-  { label: 'נמוכה 2', backgroundColor: colors.lightPink },
-];
-
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { stats, progress, chartData, isLoading } = useAppSelector((state) => state.journal);
+
+  useEffect(() => {
+    dispatch(fetchJournalStats());
+  }, [dispatch]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -94,6 +47,59 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       ]
     );
   };
+
+  // Dynamic stats data from server
+  const statsData = [
+    {
+      iconName: 'shield-check' as const,
+      value: stats?.anxietyReduction || '0%',
+      label: 'הפחתה בחרדה',
+      iconColor: colors.blue,
+    },
+    {
+      iconName: 'calendar' as const,
+      value: stats?.weeklyStreak || '0/7',
+      label: 'רצפת השבוע',
+      iconColor: colors.orange,
+    },
+    {
+      iconName: 'chart-line' as const,
+      value: String(stats?.totalEntries || 0),
+      label: 'רשומות החודש',
+      iconColor: colors.primary,
+    },
+    {
+      iconName: 'heart-outline' as const,
+      value: stats?.avgMood || '0/10',
+      label: 'מצב רוח ממוצע',
+      iconColor: colors.green,
+    },
+  ];
+
+  // Dynamic progress bars data
+  const progressData = [
+    {
+      iconName: 'heart-outline' as const,
+      label: 'מצב רוח ממוצע',
+      value: stats?.avgMood || '0/10',
+      progress: progress?.avgMood || 0,
+      color: colors.green,
+    },
+    {
+      iconName: 'alert-circle-outline' as const,
+      label: 'רמת חרדה ממוצעת',
+      value: stats?.anxietyReduction || '0%',
+      progress: progress?.anxietyLevel || 0,
+      color: colors.primary,
+    },
+  ];
+
+  // Dynamic chart legend data
+  const chartLegendData = [
+    { label: `גבוהה ${chartData?.highMood || 0}`, backgroundColor: colors.lightGreen },
+    { label: `ממוצע ${chartData?.avgMood || 0}`, backgroundColor: colors.lightOrange },
+    { label: `נמוכה ${chartData?.lowMood || 0}`, backgroundColor: colors.lightPink },
+  ];
 
   // Action cards configuration
   const actionCards = [
@@ -184,29 +190,35 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
         </View>
 
         {/* Statistics Cards */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          style={styles.statsContainer}
-          contentContainerStyle={styles.statsContent}
-        >
-          {statsData.map((stat, index) => (
-            <StatCard
-              key={index}
-              icon={
-                <MaterialCommunityIcons
-                  name={stat.iconName}
-                  size={24}
-                  color={colors.white}
-                />
-              }
-              value={stat.value}
-              label={stat.label}
-              backgroundColor={colors.cardBackground}
-              iconColor={stat.iconColor}
-            />
-          ))}
-        </ScrollView>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={true}
+            style={styles.statsContainer}
+            contentContainerStyle={styles.statsContent}
+          >
+            {statsData.map((stat, index) => (
+              <StatCard
+                key={index}
+                icon={
+                  <MaterialCommunityIcons
+                    name={stat.iconName}
+                    size={24}
+                    color={colors.white}
+                  />
+                }
+                value={stat.value}
+                label={stat.label}
+                backgroundColor={colors.cardBackground}
+                iconColor={stat.iconColor}
+              />
+            ))}
+          </ScrollView>
+        )}
 
         {/* Weekly Summary Section */}
         <View style={styles.section}>
@@ -240,8 +252,12 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             <View style={styles.streakContainer}>
               <Text style={styles.streakText}>🔥</Text>
               <View>
-                <Text style={styles.streakTitle}>שבוע מושלם! כל הכבוד</Text>
-                <Text style={styles.streakSubtitle}>7 הפעלות השבוע</Text>
+                <Text style={styles.streakTitle}>
+                  {stats?.weeklyStreak === '7/7' ? 'שבוע מושלם! כל הכבוד' : 'המשך כך!'}
+                </Text>
+                <Text style={styles.streakSubtitle}>
+                  {stats?.weeklyStreak?.split('/')[0] || 0} הפעלות השבוע
+                </Text>
               </View>
             </View>
           </View>
@@ -386,6 +402,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.primary,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
   },
   statsContainer: {
     marginVertical: 20,

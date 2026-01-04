@@ -40,6 +40,67 @@ export interface LoginData {
   password: string;
 }
 
+// Journal Types
+export interface JournalEntry {
+  id: string;
+  date: string;
+  time: string;
+  mood: number;
+  title?: string;
+  content: string;
+  tags: string[];
+  createdAt: string;
+}
+
+export interface CreateJournalEntry {
+  mood: number;
+  title?: string;
+  content: string;
+  tags?: string[];
+}
+
+export interface JournalStats {
+  weeklyStreak: string;
+  avgMood: string;
+  anxietyReduction: string;
+  goodDays: number;
+  totalEntries: number;
+}
+
+// Forum Types
+export interface ForumPost {
+  id: string;
+  author: string;
+  isAnonymous: boolean;
+  date: string;
+  title: string;
+  content: string;
+  categoryId: string;
+  likes: number;
+  comments: number;
+  isLiked?: boolean;
+}
+
+export interface CreateForumPost {
+  title: string;
+  content: string;
+  categoryId: string;
+  isAnonymous?: boolean;
+}
+
+// Content Types
+export interface ContentItem {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  category: string;
+  type: 'meditation' | 'breathing' | 'yoga' | 'article' | 'video' | 'audio';
+  gradientColors: string[];
+  imageUrl?: string;
+  tags: string[];
+}
+
 // Helper function to get stored token
 export const getStoredToken = async (): Promise<string | null> => {
   try {
@@ -186,6 +247,142 @@ export const authAPI = {
     }
 
     return { isAuthenticated: false, user: null };
+  },
+};
+
+// Journal API functions
+export const journalAPI = {
+  // Get all journal entries
+  getEntries: async (params?: { page?: number; limit?: number; mood?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    if (params?.mood) queryParams.append('mood', String(params.mood));
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiRequest<{ success: boolean; data: { entries: JournalEntry[]; pagination: any } }>(`/journal${query}`);
+  },
+
+  // Create new journal entry
+  createEntry: async (entry: CreateJournalEntry) => {
+    return apiRequest<{ success: boolean; data: { entry: JournalEntry } }>('/journal', {
+      method: 'POST',
+      body: JSON.stringify(entry),
+    });
+  },
+
+  // Get single entry
+  getEntry: async (id: string) => {
+    return apiRequest<{ success: boolean; data: { entry: JournalEntry } }>(`/journal/${id}`);
+  },
+
+  // Update entry
+  updateEntry: async (id: string, entry: Partial<CreateJournalEntry>) => {
+    return apiRequest<{ success: boolean; data: { entry: JournalEntry } }>(`/journal/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(entry),
+    });
+  },
+
+  // Delete entry
+  deleteEntry: async (id: string) => {
+    return apiRequest<{ success: boolean }>(`/journal/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Get journal statistics
+  getStats: async () => {
+    return apiRequest<{ 
+      success: boolean; 
+      data: { 
+        stats: JournalStats; 
+        progress: { avgMood: number; anxietyLevel: number };
+        chartData: { entries: any[]; highMood: number; avgMood: number; lowMood: number };
+      } 
+    }>('/journal/stats');
+  },
+};
+
+// Forum API functions
+export const forumAPI = {
+  // Get all posts
+  getPosts: async (params?: { page?: number; limit?: number; category?: string; sort?: string; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.sort) queryParams.append('sort', params.sort);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiRequest<{ success: boolean; data: { posts: ForumPost[]; pagination: any } }>(`/forum${query}`);
+  },
+
+  // Create new post
+  createPost: async (post: CreateForumPost) => {
+    return apiRequest<{ success: boolean; data: { post: ForumPost } }>('/forum', {
+      method: 'POST',
+      body: JSON.stringify(post),
+    });
+  },
+
+  // Get single post with comments
+  getPost: async (id: string) => {
+    return apiRequest<{ success: boolean; data: { post: ForumPost & { comments: any[] } } }>(`/forum/${id}`);
+  },
+
+  // Toggle like
+  toggleLike: async (id: string) => {
+    return apiRequest<{ success: boolean; data: { likes: number; isLiked: boolean } }>(`/forum/${id}/like`, {
+      method: 'POST',
+    });
+  },
+
+  // Add comment
+  addComment: async (id: string, content: string, isAnonymous?: boolean) => {
+    return apiRequest<{ success: boolean; data: { comment: any; commentsCount: number } }>(`/forum/${id}/comment`, {
+      method: 'POST',
+      body: JSON.stringify({ content, isAnonymous }),
+    });
+  },
+
+  // Delete post
+  deletePost: async (id: string) => {
+    return apiRequest<{ success: boolean }>(`/forum/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Content API functions
+export const contentAPI = {
+  // Get all content
+  getContent: async (params?: { category?: string; type?: string; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.type) queryParams.append('type', params.type);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiRequest<{ success: boolean; data: { content: ContentItem[] } }>(`/content${query}`);
+  },
+
+  // Get recommended content
+  getRecommended: async () => {
+    return apiRequest<{ success: boolean; data: { content: ContentItem[] } }>('/content/recommended');
+  },
+
+  // Get single content item
+  getContentById: async (id: string) => {
+    return apiRequest<{ success: boolean; data: { content: ContentItem } }>(`/content/${id}`);
+  },
+
+  // Seed content (one-time setup)
+  seedContent: async () => {
+    return apiRequest<{ success: boolean; message: string }>('/content/seed', {
+      method: 'POST',
+    });
   },
 };
 

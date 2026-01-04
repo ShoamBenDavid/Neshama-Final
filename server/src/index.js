@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -5,6 +6,9 @@ const config = require('./config/config');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
+const journalRoutes = require('./routes/journalRoutes');
+const forumRoutes = require('./routes/forumRoutes');
+const contentRoutes = require('./routes/contentRoutes');
 
 // Initialize express app
 const app = express();
@@ -22,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/journal', journalRoutes);
+app.use('/api/forum', forumRoutes);
+app.use('/api/content', contentRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

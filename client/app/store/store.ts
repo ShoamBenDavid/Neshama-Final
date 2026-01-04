@@ -1,9 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
+import journalReducer from './slices/journalSlice';
+import forumReducer from './slices/forumSlice';
+import contentReducer from './slices/contentSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    journal: journalReducer,
+    forum: forumReducer,
+    content: contentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -13,4 +19,3 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-

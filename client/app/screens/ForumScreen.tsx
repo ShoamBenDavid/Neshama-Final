@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
@@ -20,18 +22,8 @@ import FilterChipList, { FilterChip } from '../components/FilterChipList';
 import EmptyState from '../components/EmptyState';
 import HelpFooterButton from '../components/HelpFooterButton';
 import colors from '../config/colors';
-
-interface ForumPost {
-  id: string;
-  author: string;
-  isAnonymous: boolean;
-  date: string;
-  title: string;
-  content: string;
-  categoryId: string;
-  likes: number;
-  comments: number;
-}
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchForumPosts, createForumPost, togglePostLike } from '../store/slices/forumSlice';
 
 // Categories with colors
 const categories: Category[] = [
@@ -41,8 +33,6 @@ const categories: Category[] = [
   { id: 'relationships', label: 'יחסים', color: colors.pink },
   { id: 'work-stress', label: 'לחץ בעבודה', color: colors.danger },
   { id: 'success', label: 'סיפורי הצלחה', color: colors.success },
-  { id: 'popular', label: 'פופולריים', color: colors.purple },
-  { id: 'recent', label: 'אחרונים', color: colors.teal },
 ];
 
 const categoryColors: { [key: string]: string } = {
@@ -51,6 +41,7 @@ const categoryColors: { [key: string]: string } = {
   relationships: colors.pink,
   'work-stress': colors.danger,
   success: colors.success,
+  general: colors.gray[400],
 };
 
 const sortChips: FilterChip[] = [
@@ -58,85 +49,32 @@ const sortChips: FilterChip[] = [
   { id: 'popular', label: 'פופולריים', icon: 'fire', color: colors.text.secondary, activeColor: colors.primary, backgroundColor: colors.gray[100] },
 ];
 
-// Sample posts
-const samplePosts: ForumPost[] = [
-  {
-    id: '1',
-    author: 'אנונימי',
-    isAnonymous: true,
-    date: 'בדצמבר 2, 2025',
-    title: 'רגעים קשים בעבודה - איך מתמודדים?',
-    content:
-      'היי לכולם, אני עובר בתקופה האתגרונה בחלקו הלוקו וגומר. מרגיש שאני לא מצליח להירדם בערב ואז הלילות קשים. מישהו מכיר את ההרגשה הזו?',
-    categoryId: 'work-stress',
-    likes: 12,
-    comments: 3,
-  },
-  {
-    id: '2',
-    author: 'מיכל',
-    isAnonymous: false,
-    date: 'בדצמבר 2, 2025',
-    title: 'סיפור הצלחה - התחלתי לרוץ אחרי 3 שנים!',
-    content:
-      'רציתי לשתף שאחרי 3 שנים של תקופה קשה, התחלתי לרוץ מחר שוב לי היה מדיטציה ויוגרמית ויומן רגשי. אם גם אתם מרגישים שאין תקווה - תמיד, זה נמצא.',
-    categoryId: 'success',
-    likes: 45,
-    comments: 8,
-  },
-  {
-    id: '3',
-    author: 'אנונימי',
-    isAnonymous: true,
-    date: 'בדצמבר 2, 2025',
-    title: 'חרדה חברתית - מישהו גם סובל מזה?',
-    content:
-      'מאוד שאני זוכרת את עצמי, המחנכים והחברתיים מטרידים לי חרדה גדולה. מסכף לפגוש אנשים חדשים, דואג לפני מפגשים. האם מישהו מכיר את זאת? איך מתמודדים?',
-    categoryId: 'anxiety',
-    likes: 23,
-    comments: 5,
-  },
-  {
-    id: '4',
-    author: 'אנונימי',
-    isAnonymous: true,
-    date: 'בדצמבר 2, 2025',
-    title: 'יחסים עם בן/בת זוג - איך מדברים?',
-    content:
-      'אנחנו ביחד כבר 5 שנים והתקשורה נהייתה יותר קשה. אנחנו לא מצליחים לדבר בכל ליבי. יש למישהו עצות איך לשפר תקשורת?',
-    categoryId: 'relationships',
-    likes: 18,
-    comments: 6,
-  },
-];
-
 export default function ForumScreen() {
-  const [posts] = useState<ForumPost[]>(samplePosts);
+  const dispatch = useAppDispatch();
+  const { posts, isLoading, isCreating, error } = useAppSelector((state) => state.forum);
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewPostModal, setShowNewPostModal] = useState(false);
   const [sortBy, setSortBy] = useState<string>('recent');
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
+  const [newPostCategory, setNewPostCategory] = useState<string>('general');
+  const [isAnonymous, setIsAnonymous] = useState(true);
 
-  // Filter posts
-  const filteredPosts = posts.filter((post) => {
-    const matchesCategory =
-      selectedCategory === 'all' || post.categoryId === selectedCategory;
-    const matchesSearch =
-      searchQuery === '' ||
-      post.title.includes(searchQuery) ||
-      post.content.includes(searchQuery);
-    return matchesCategory && matchesSearch;
-  });
+  useEffect(() => {
+    dispatch(fetchForumPosts({ category: selectedCategory, sort: sortBy, search: searchQuery }));
+  }, [dispatch, selectedCategory, sortBy]);
 
-  // Sort posts
-  const sortedPosts = [...filteredPosts].sort((a, b) => {
-    if (sortBy === 'popular') {
-      return b.likes - a.likes;
+  useEffect(() => {
+    if (error) {
+      Alert.alert('שגיאה', error);
     }
-    return 0; // Keep original order for recent
-  });
+  }, [error]);
+
+  const handleSearch = () => {
+    dispatch(fetchForumPosts({ category: selectedCategory, sort: sortBy, search: searchQuery }));
+  };
 
   const getCategoryInfo = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
@@ -147,11 +85,29 @@ export default function ForumScreen() {
     };
   };
 
-  const handleSavePost = () => {
-    console.log('Save post:', { title: newPostTitle, content: newPostContent });
-    setShowNewPostModal(false);
-    setNewPostTitle('');
-    setNewPostContent('');
+  const handleSavePost = async () => {
+    if (!newPostTitle.trim() || !newPostContent.trim()) {
+      Alert.alert('שגיאה', 'אנא מלא את כל השדות');
+      return;
+    }
+
+    const result = await dispatch(createForumPost({
+      title: newPostTitle.trim(),
+      content: newPostContent.trim(),
+      categoryId: newPostCategory,
+      isAnonymous,
+    }));
+
+    if (createForumPost.fulfilled.match(result)) {
+      setShowNewPostModal(false);
+      setNewPostTitle('');
+      setNewPostContent('');
+      setNewPostCategory('general');
+    }
+  };
+
+  const handleLike = (postId: string) => {
+    dispatch(togglePostLike(postId));
   };
 
   return (
@@ -182,6 +138,7 @@ export default function ForumScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="חיפוש בפורום..."
+          onSubmitEditing={handleSearch}
         />
 
         {/* Category Tabs */}
@@ -202,24 +159,39 @@ export default function ForumScreen() {
           />
         </View>
 
+        {/* Loading State */}
+        {isLoading && posts.length === 0 && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>טוען פוסטים...</Text>
+          </View>
+        )}
+
         {/* Posts List */}
         <View style={styles.postsContainer}>
-          {sortedPosts.map((post) => (
+          {posts.map((post) => (
             <ForumPostCard
               key={post.id}
-              {...post}
+              id={post.id}
+              author={post.author}
+              isAnonymous={post.isAnonymous}
+              date={post.date}
+              title={post.title}
+              content={post.content}
               category={getCategoryInfo(post.categoryId)}
+              likes={post.likes}
+              comments={post.comments}
               onPress={() => console.log('View post:', post.id)}
-              onLike={() => console.log('Like post:', post.id)}
+              onLike={() => handleLike(post.id)}
               onComment={() => console.log('Comment on post:', post.id)}
             />
           ))}
 
-          {sortedPosts.length === 0 && (
+          {posts.length === 0 && !isLoading && (
             <EmptyState
               iconName="forum-outline"
               title="אין פוסטים להצגה"
-              subtitle="נסה לשנות את הסינון או החיפוש"
+              subtitle="היה הראשון לשתף בקהילה!"
             />
           )}
         </View>
@@ -241,14 +213,26 @@ export default function ForumScreen() {
             onClose={() => setShowNewPostModal(false)}
             onSave={handleSavePost}
             saveText="פרסם"
+            saveDisabled={!newPostTitle.trim() || !newPostContent.trim() || isCreating}
           />
 
           <ScrollView
             style={styles.modalContent}
             showsVerticalScrollIndicator={false}
           >
+            {isCreating && (
+              <View style={styles.creatingOverlay}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.creatingText}>מפרסם...</Text>
+              </View>
+            )}
+
             {/* Anonymous Toggle */}
-            <View style={styles.anonymousToggle}>
+            <TouchableOpacity 
+              style={styles.anonymousToggle}
+              onPress={() => setIsAnonymous(!isAnonymous)}
+              activeOpacity={0.8}
+            >
               <View style={styles.toggleLeft}>
                 <MaterialCommunityIcons
                   name="incognito"
@@ -257,14 +241,12 @@ export default function ForumScreen() {
                 />
                 <Text style={styles.toggleText}>פרסם באופן אנונימי</Text>
               </View>
-              <View style={styles.switch}>
-                <MaterialCommunityIcons
-                  name="toggle-switch"
-                  size={40}
-                  color={colors.primary}
-                />
-              </View>
-            </View>
+              <MaterialCommunityIcons
+                name={isAnonymous ? "toggle-switch" : "toggle-switch-off"}
+                size={40}
+                color={isAnonymous ? colors.primary : colors.gray[400]}
+              />
+            </TouchableOpacity>
 
             {/* Category Selection */}
             <View style={styles.inputContainer}>
@@ -275,14 +257,19 @@ export default function ForumScreen() {
                 style={styles.categorySelection}
               >
                 {categories
-                  .filter((c) => c.id !== 'all' && c.id !== 'popular' && c.id !== 'recent')
+                  .filter((c) => c.id !== 'all')
                   .map((category) => (
                     <TouchableOpacity
                       key={category.id}
                       style={[
                         styles.categoryOption,
-                        { backgroundColor: category.color + '20' },
+                        { 
+                          backgroundColor: category.color + '20',
+                          borderWidth: newPostCategory === category.id ? 2 : 0,
+                          borderColor: category.color,
+                        },
                       ]}
+                      onPress={() => setNewPostCategory(category.id)}
                     >
                       <Text
                         style={[
@@ -365,6 +352,14 @@ const styles = StyleSheet.create({
   sortChips: {
     marginBottom: 0,
   },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: colors.text.secondary,
+  },
   postsContainer: {
     paddingHorizontal: 20,
   },
@@ -378,6 +373,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+  creatingOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: colors.lightPurple,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  creatingText: {
+    marginLeft: 8,
+    color: colors.primary,
+    fontWeight: '600',
   },
   anonymousToggle: {
     flexDirection: 'row',
@@ -398,7 +407,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontWeight: '600',
   },
-  switch: {},
   inputContainer: {
     marginBottom: 20,
   },
