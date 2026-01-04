@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_CONFIG from '../config/api';
 
-// Use the centralized API configuration
-const API_BASE_URL = API_CONFIG.BASE_URL;
+// Helper function to get the base URL dynamically (evaluates on each call)
+const getBaseUrl = (): string => API_CONFIG.BASE_URL;
 
 // Token storage keys
 const TOKEN_KEY = 'auth_token';
@@ -162,18 +162,53 @@ const apiRequest = async <T>(
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const url = `${getBaseUrl()}${endpoint}`;
+    console.log('Making API request to:', url);
+    if (options.body) {
+      console.log('Request body:', options.body);
+    }
+    
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+    
+    console.log('Response status:', response.status, response.statusText);
 
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.message || 'An error occurred');
+    // Check if response is ok before trying to parse JSON
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        
+        // Handle validation errors (400 with errors array)
+        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+          const validationErrors = errorData.errors
+            .map((err: any) => err.msg || err.message || `${err.path}: ${err.msg}`)
+            .join(', ');
+          errorMessage = validationErrors;
+          console.error('Validation errors:', errorData.errors);
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        // If response is not JSON, use the status text
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    // Handle network errors
+    if (error.message === 'Network request failed' || error.message === 'Failed to fetch') {
+      const baseUrl = getBaseUrl();
+      console.error('Network error - Check if server is running at:', baseUrl);
+      throw new Error(`Cannot connect to server. Please ensure the server is running at ${baseUrl}`);
+    }
+    throw error;
   }
-
-  return data;
 };
 
 // Auth API functions

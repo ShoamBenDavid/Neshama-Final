@@ -7,9 +7,11 @@ import { Platform } from 'react-native';
 const getLocalhost = () => {
   if (Platform.OS === 'android') {
     // Android emulator uses 10.0.2.2 to access host machine's localhost
+    console.log('📱 Platform detected: Android - using 10.0.2.2');
     return '10.0.2.2';
   }
   // iOS simulator and web can use localhost directly
+  console.log(`📱 Platform detected: ${Platform.OS} - using localhost`);
   return 'localhost';
 };
 
@@ -23,7 +25,9 @@ const API_CONFIG = {
     // For development, use local server
     // For production, replace with your actual server URL
     const host = getLocalhost();
-    return `http://${host}:${this.DEV_PORT}/api`;
+    const url = `http://${host}:${this.DEV_PORT}/api`;
+    console.log(`🔗 API Base URL configured: ${url}`);
+    return url;
   },
   
   // Production URL (uncomment and update when deploying)
@@ -31,4 +35,3 @@ const API_CONFIG = {
 };
 
 export default API_CONFIG;
-

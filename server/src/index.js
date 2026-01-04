@@ -1,4 +1,4 @@
-require("dotenv").config();
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -13,14 +13,19 @@ const contentRoutes = require('./routes/contentRoutes');
 // Initialize express app
 const app = express();
 
-// Connect to database
-connectDB();
+// Connect to database (non-blocking)
+console.log('Attempting to connect to MongoDB...');
+connectDB().catch(err => {
+  // Error already logged in connectDB
+});
 
 // Middleware
-app.use(cors({
-  origin: '*', // Allow all origins for development
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: '*', // Allow all origins for development
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -58,8 +63,15 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = config.PORT;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
+  console.log(`🌐 Server listening on all network interfaces (0.0.0.0)`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Please use a different port or stop the other process.`);
+  } else {
+    console.error('❌ Server error:', err);
+  }
+  process.exit(1);
 });
-
