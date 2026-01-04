@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -13,10 +14,12 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors({
-  origin: '*', // Allow all origins for development
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: '*', // Allow all origins for development
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -55,4 +58,3 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
 });
-
