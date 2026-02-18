@@ -98,3 +98,5 @@ server/logs/
 # Client specific  
 client/.expo/
 client/node_modules/
+.env
+.env.*
