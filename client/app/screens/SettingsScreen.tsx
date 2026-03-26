@@ -20,8 +20,7 @@ export default function SettingsScreen() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [saving, setSaving] = useState(false);
 
-  const [notifications, setNotifications] = useState(true);
-  const [dailyReminder, setDailyReminder] = useState(true);
+  
   const [darkMode, setDarkMode] = useState(false);
 
   const handleSaveProfile = async () => {
@@ -82,20 +81,8 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
       <Card style={styles.card}>
-        <SettingRow
-          label={t('settings.pushNotifications')}
-          description={t('settings.pushNotificationsDesc')}
-          value={notifications}
-          onToggle={setNotifications}
-        />
-        <View style={styles.divider} />
-        <SettingRow
-          label={t('settings.dailyReminder')}
-          description={t('settings.dailyReminderDesc')}
-          value={dailyReminder}
-          onToggle={setDailyReminder}
-        />
-        <View style={styles.divider} />
+    
+        
         <SettingRow
           label={t('settings.darkMode')}
           description={t('settings.darkModeDesc')}

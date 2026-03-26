@@ -83,6 +83,7 @@ export const fetchJournalStats = createAsyncThunk(
     try {
       const response = await journalAPI.getStats();
       if (response.success) {
+       
         return response.data;
       }
       return rejectWithValue('Failed to fetch stats');

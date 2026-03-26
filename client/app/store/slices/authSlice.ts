@@ -1,12 +1,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {
   authAPI,
+  ApiError,
   User,
   RegisterData,
   LoginData,
   getStoredUser,
   getStoredToken,
+  clearAuthData,
 } from '../../services/api';
+import { isTokenExpired, resetExpirationGuard } from '../../services/sessionManager';
 // Types
 interface AuthState {
   user: User | null;
@@ -81,14 +84,22 @@ export const checkAuthStatus = createAsyncThunk(
         return { isAuthenticated: false, user: null, token: null };
       }
 
-      // Optionally verify token with server
+      if (isTokenExpired(token)) {
+        await clearAuthData();
+        return { isAuthenticated: false, user: null, token: null };
+      }
+
       try {
         const response = await authAPI.getMe();
         if (response.success && response.data) {
           return { isAuthenticated: true, user: response.data.user, token };
         }
-      } catch {
-        // Token invalid, but return stored data for offline support
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          await clearAuthData();
+          return { isAuthenticated: false, user: null, token: null };
+        }
+        // Network error — allow offline access with a non-expired token
         return { isAuthenticated: true, user, token };
       }
 
@@ -109,6 +120,13 @@ const authSlice = createSlice({
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
+    },
+    sessionExpired: (state) => {
+      state.isAuthenticated = false;
+      state.user = null;
+      state.token = null;
+      state.isLoading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -156,6 +174,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
+      resetExpirationGuard();
     });
     builder.addCase(logoutUser.rejected, (state, action) => {
       state.isLoading = false;
@@ -181,5 +200,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser } = authSlice.actions;
+export const { clearError, setUser, sessionExpired } = authSlice.actions;
 export default authSlice.reducer;

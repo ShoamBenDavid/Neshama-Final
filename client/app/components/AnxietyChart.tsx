@@ -19,35 +19,63 @@ import type { TimeRange } from '../hooks/useAnxietyTrend';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CHART_PADDING_LEFT = 36;
 const CHART_PADDING_RIGHT = 16;
-const CHART_HEIGHT = 180;
+const CHART_HEIGHT = 200;
 const DOT_RADIUS = 5;
 const HIT_SLOP = 18;
 
-interface AnxietyChartProps {
+const Y_MIN = 1;
+const Y_MAX = 10;
+const Y_RANGE = Y_MAX - Y_MIN;
+const CHART_TOP_PAD = 16;
+const CHART_BOT_PAD = 12;
+const CHART_USABLE = CHART_HEIGHT - CHART_TOP_PAD - CHART_BOT_PAD;
+
+const Y_LABELS = [1, 3, 5, 7, 10];
+
+export interface AnxietyChartProps {
   points: AnxietyTrendPoint[];
   summary: AnxietyTrendSummary | null;
   range: TimeRange;
   onRangeChange: (range: TimeRange) => void;
 }
 
-function formatDateLabel(dateStr: string, compact: boolean): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  if (compact) {
-    return `${d.getDate()}/${d.getMonth() + 1}`;
-  }
+/** Map server 0-1 anxiety to a 1-10 display value. */
+function toDisplayScale(raw: number): number {
+  const clamped = Math.max(0, Math.min(1, raw));
+  return Y_MIN + clamped * Y_RANGE;
+}
+
+/** Map a 1-10 display value to a Y pixel coordinate. */
+function valueToY(v: number): number {
+  const ratio = (v - Y_MIN) / Y_RANGE;
+  return CHART_HEIGHT - CHART_BOT_PAD - ratio * CHART_USABLE;
+}
+
+function parseDate(dateStr: string): Date {
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+  return new Date(dateStr + 'T00:00:00');
+}
+
+function formatDateLabel(dateStr: string): string {
+  const d = parseDate(dateStr);
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-function buildSmoothPath(coords: { x: number; y: number }[]): string {
-  if (coords.length === 0) return '';
-  if (coords.length === 1) return `M${coords[0].x},${coords[0].y}`;
+function formatTooltipDate(dateStr: string): string {
+  const d = parseDate(dateStr);
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  const hours = d.getHours().toString().padStart(2, '0');
+  const mins = d.getMinutes().toString().padStart(2, '0');
+  return `${day}/${month}  ${hours}:${mins}`;
+}
 
+function buildLinearPath(coords: { x: number; y: number }[]): string {
+  if (coords.length === 0) return '';
   let d = `M${coords[0].x},${coords[0].y}`;
-  for (let i = 0; i < coords.length - 1; i++) {
-    const curr = coords[i];
-    const next = coords[i + 1];
-    const cpx = (curr.x + next.x) / 2;
-    d += ` C${cpx},${curr.y} ${cpx},${next.y} ${next.x},${next.y}`;
+  for (let i = 1; i < coords.length; i++) {
+    d += ` L${coords[i].x},${coords[i].y}`;
   }
   return d;
 }
@@ -64,74 +92,61 @@ export default function AnxietyChart({
   const containerWidth = SCREEN_WIDTH - spacing.lg * 2;
   const chartWidth = containerWidth - CHART_PADDING_LEFT - CHART_PADDING_RIGHT;
 
-  const maxAnxiety = useMemo(() => {
-    if (points.length === 0) return 1;
-    return Math.max(0.5, ...points.map((p) => p.anxiety));
-  }, [points]);
+  const displayPoints = useMemo(
+    () =>
+      points
+        .filter((p) => p.anxiety != null && !isNaN(p.anxiety))
+        .map((p) => ({ ...p, display: toDisplayScale(p.anxiety) })),
+    [points],
+  );
 
   const coords = useMemo(() => {
-    if (points.length === 0) return [];
-    if (points.length === 1) {
-      return [
-        {
-          x: CHART_PADDING_LEFT + chartWidth / 2,
-          y: CHART_HEIGHT - (points[0].anxiety / maxAnxiety) * (CHART_HEIGHT - 24) - 12,
-        },
-      ];
+    if (displayPoints.length === 0) return [];
+    if (displayPoints.length === 1) {
+      return [{ x: CHART_PADDING_LEFT + chartWidth / 2, y: valueToY(displayPoints[0].display) }];
     }
-    return points.map((p, i) => ({
-      x: CHART_PADDING_LEFT + (i / (points.length - 1)) * chartWidth,
-      y: CHART_HEIGHT - (p.anxiety / maxAnxiety) * (CHART_HEIGHT - 24) - 12,
+    return displayPoints.map((p, i) => ({
+      x: CHART_PADDING_LEFT + (i / (displayPoints.length - 1)) * chartWidth,
+      y: valueToY(p.display),
     }));
-  }, [points, chartWidth, maxAnxiety]);
+  }, [displayPoints, chartWidth]);
 
-  const linePath = useMemo(() => buildSmoothPath(coords), [coords]);
+  const linePath = useMemo(() => buildLinearPath(coords), [coords]);
 
   const areaPath = useMemo(() => {
     if (coords.length === 0) return '';
-    const bottomY = CHART_HEIGHT;
-    const fill = `${linePath} L${coords[coords.length - 1].x},${bottomY} L${coords[0].x},${bottomY} Z`;
-    return fill;
+    const bottomY = valueToY(Y_MIN);
+    return `${linePath} L${coords[coords.length - 1].x},${bottomY} L${coords[0].x},${bottomY} Z`;
   }, [linePath, coords]);
 
-  const yLabels = useMemo(() => {
-    const steps = [0, 0.25, 0.5, 0.75, 1.0];
-    return steps
-      .filter((s) => s <= maxAnxiety + 0.1)
-      .map((s) => ({
-        value: s,
-        y: CHART_HEIGHT - (s / maxAnxiety) * (CHART_HEIGHT - 24) - 12,
-        label: s.toFixed(1),
-      }));
-  }, [maxAnxiety]);
+  const yAxisLabels = useMemo(
+    () =>
+      Y_LABELS.map((v) => ({
+        value: v,
+        y: valueToY(v),
+        label: String(v),
+      })),
+    [],
+  );
 
   const xLabels = useMemo(() => {
-    if (points.length <= 1) {
-      return points.map((p, i) => ({
-        label: formatDateLabel(p.date, true),
+    if (displayPoints.length <= 1) {
+      return displayPoints.map((p, i) => ({
+        label: formatDateLabel(p.date),
         x: coords[i]?.x ?? CHART_PADDING_LEFT,
       }));
     }
-    const step = Math.max(1, Math.floor(points.length / 5));
+    const step = Math.max(1, Math.floor(displayPoints.length / 5));
     const labels: { label: string; x: number }[] = [];
-    for (let i = 0; i < points.length; i += step) {
-      labels.push({
-        label: formatDateLabel(points[i].date, true),
-        x: coords[i].x,
-      });
+    for (let i = 0; i < displayPoints.length; i += step) {
+      labels.push({ label: formatDateLabel(displayPoints[i].date), x: coords[i].x });
     }
-    if (labels.length > 0) {
-      const lastIdx = points.length - 1;
-      const lastLabelX = labels[labels.length - 1].x;
-      if (Math.abs(coords[lastIdx].x - lastLabelX) > 30) {
-        labels.push({
-          label: formatDateLabel(points[lastIdx].date, true),
-          x: coords[lastIdx].x,
-        });
-      }
+    const lastIdx = displayPoints.length - 1;
+    if (labels.length > 0 && Math.abs(coords[lastIdx].x - labels[labels.length - 1].x) > 30) {
+      labels.push({ label: formatDateLabel(displayPoints[lastIdx].date), x: coords[lastIdx].x });
     }
     return labels;
-  }, [points, coords]);
+  }, [displayPoints, coords]);
 
   const trendIcon =
     summary?.trendDirection === 'improving'
@@ -152,6 +167,12 @@ export default function AnxietyChart({
     14: t('dashboard.chart.twoWeeks'),
     30: t('dashboard.chart.month'),
   };
+
+  const avgDisplay = summary
+    ? toDisplayScale(summary.averageAnxiety).toFixed(1)
+    : null;
+
+  const selected = selectedIndex != null ? displayPoints[selectedIndex] : null;
 
   return (
     <View style={styles.container}>
@@ -176,19 +197,14 @@ export default function AnxietyChart({
             onPress={() => onRangeChange(r)}
             style={[styles.rangeChip, range === r && styles.rangeChipActive]}
           >
-            <Text
-              style={[
-                styles.rangeChipText,
-                range === r && styles.rangeChipTextActive,
-              ]}
-            >
+            <Text style={[styles.rangeChipText, range === r && styles.rangeChipTextActive]}>
               {rangeLabels[r]}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      {points.length === 0 ? (
+      {displayPoints.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>{t('dashboard.chart.noData')}</Text>
         </View>
@@ -200,41 +216,41 @@ export default function AnxietyChart({
             style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
           >
             <Defs>
-              <SvgLinearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#667EEA" stopOpacity={0.35} />
+              <SvgLinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#667EEA" stopOpacity={0.3} />
                 <Stop offset="100%" stopColor="#667EEA" stopOpacity={0.02} />
               </SvgLinearGradient>
             </Defs>
 
-            {yLabels.map((yl) => (
-              <Line
-                key={yl.value}
-                x1={CHART_PADDING_LEFT}
-                y1={yl.y}
-                x2={CHART_PADDING_LEFT + chartWidth}
-                y2={yl.y}
-                stroke={colors.borderLight}
-                strokeWidth={1}
-                strokeDasharray="4 4"
-              />
+            {/* Horizontal grid lines + Y labels */}
+            {yAxisLabels.map((yl) => (
+              <React.Fragment key={yl.value}>
+                <Line
+                  x1={CHART_PADDING_LEFT}
+                  y1={yl.y}
+                  x2={CHART_PADDING_LEFT + chartWidth}
+                  y2={yl.y}
+                  stroke={colors.borderLight}
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
+                />
+                <SvgText
+                  x={isRTL ? containerWidth - 4 : 4}
+                  y={yl.y + 4}
+                  fontSize={10}
+                  fill={colors.text.tertiary}
+                  textAnchor={isRTL ? 'end' : 'start'}
+                  transform={isRTL ? `scale(-1,1) translate(${-containerWidth}, 0)` : undefined}
+                >
+                  {yl.label}
+                </SvgText>
+              </React.Fragment>
             ))}
 
-            {yLabels.map((yl) => (
-              <SvgText
-                key={`lbl-${yl.value}`}
-                x={isRTL ? containerWidth - 4 : 4}
-                y={yl.y + 4}
-                fontSize={10}
-                fill={colors.text.tertiary}
-                textAnchor={isRTL ? 'end' : 'start'}
-                transform={isRTL ? `scale(-1,1) translate(${-containerWidth}, 0)` : undefined}
-              >
-                {yl.label}
-              </SvgText>
-            ))}
+            {/* Filled area under the line */}
+            {areaPath ? <Path d={areaPath} fill="url(#areaGrad)" /> : null}
 
-            {areaPath ? <Path d={areaPath} fill="url(#areaGradient)" /> : null}
-
+            {/* Trend line */}
             {linePath ? (
               <Path
                 d={linePath}
@@ -246,6 +262,7 @@ export default function AnxietyChart({
               />
             ) : null}
 
+            {/* Data point dots */}
             {coords.map((c, i) => (
               <Circle
                 key={i}
@@ -258,6 +275,7 @@ export default function AnxietyChart({
               />
             ))}
 
+            {/* X-axis date labels */}
             {xLabels.map((xl, i) => (
               <SvgText
                 key={`x-${i}`}
@@ -273,7 +291,7 @@ export default function AnxietyChart({
             ))}
           </Svg>
 
-          {/* Hit areas for data points */}
+          {/* Tap targets for data points */}
           <View style={[StyleSheet.absoluteFill, styles.hitLayer]} pointerEvents="box-none">
             {coords.map((c, i) => (
               <Pressable
@@ -292,42 +310,34 @@ export default function AnxietyChart({
             ))}
           </View>
 
-          {selectedIndex !== null && points[selectedIndex] && (
+          {/* Tooltip for selected point */}
+          {selected && selectedIndex != null && coords[selectedIndex] && (
             <View
               style={[
                 styles.tooltip,
                 {
-                  left: Math.max(
-                    8,
-                    Math.min(
-                      (isRTL ? containerWidth - coords[selectedIndex].x : coords[selectedIndex].x) - 55,
-                      containerWidth - 118,
-                    ),
+                  left: Math.min(
+                    Math.max(8, (isRTL ? containerWidth - coords[selectedIndex].x : coords[selectedIndex].x) - 55),
+                    containerWidth - 120,
                   ),
-                  top: coords[selectedIndex].y - 50,
+                  top: coords[selectedIndex].y - 58,
                 },
               ]}
             >
-              <Text style={styles.tooltipDate}>
-                {formatDateLabel(points[selectedIndex].date, false)}
-              </Text>
+              <Text style={styles.tooltipDate}>{formatTooltipDate(selected.date)}</Text>
               <Text style={styles.tooltipValue}>
-                {t('dashboard.chart.anxiety')}: {(points[selectedIndex].anxiety * 100).toFixed(0)}%
-              </Text>
-              <Text style={styles.tooltipMood}>
-                {t('dashboard.chart.mood')}: {points[selectedIndex].mood}/5
+                {t('dashboard.chart.anxiety')}: {selected.display.toFixed(1)}/10
               </Text>
             </View>
           )}
         </View>
       )}
 
-      {summary && !points.length ? null : summary ? (
+      {/* Summary insight row */}
+      {summary && displayPoints.length > 0 ? (
         <View style={styles.insightRow}>
           <Text style={styles.insightLabel}>{t('dashboard.chart.avg')}</Text>
-          <Text style={styles.insightValue}>
-            {(summary.averageAnxiety * 100).toFixed(0)}%
-          </Text>
+          <Text style={styles.insightValue}>{avgDisplay}/10</Text>
           <View style={styles.insightDivider} />
           <Text style={styles.insightLabel}>{t('dashboard.chart.entries')}</Text>
           <Text style={styles.insightValue}>{summary.totalEntries}</Text>
@@ -425,10 +435,6 @@ const styles = StyleSheet.create({
   tooltipValue: {
     ...typography.caption,
     color: 'rgba(255,255,255,0.85)',
-  },
-  tooltipMood: {
-    ...typography.caption,
-    color: 'rgba(255,255,255,0.7)',
   },
   insightRow: {
     flexDirection: 'row',

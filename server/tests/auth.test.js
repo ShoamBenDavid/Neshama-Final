@@ -197,6 +197,39 @@ describe('GET /api/auth/me', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
+    expect(res.body.code).toBe('TOKEN_INVALID');
+  });
+
+  it('should return TOKEN_EXPIRED code for expired token', async () => {
+    const jwt = require('jsonwebtoken');
+    const config = require('../src/config/config');
+    const user = await User.create({
+      name: 'Expired User',
+      email: 'expired@example.com',
+      password: 'password123',
+    });
+
+    const expiredToken = jwt.sign(
+      { id: user._id },
+      config.JWT_SECRET || 'test-secret',
+      { expiresIn: '-10s' },
+    );
+
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${expiredToken}`);
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.code).toBe('TOKEN_EXPIRED');
+    expect(res.body.message).toBe('Token has expired');
+  });
+
+  it('should return NO_TOKEN code when no token provided', async () => {
+    const res = await request(app).get('/api/auth/me');
+
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('NO_TOKEN');
   });
 });
 

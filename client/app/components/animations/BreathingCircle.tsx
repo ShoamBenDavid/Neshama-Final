@@ -31,6 +31,14 @@ export default function BreathingCircle({
   const scale = useRef(new Animated.Value(MIN_SCALE)).current;
   const opacity = useRef(new Animated.Value(0.6)).current;
   const outerScale = useRef(new Animated.Value(MIN_SCALE)).current;
+  const lastScale = useRef(MIN_SCALE);
+
+  useEffect(() => {
+    const id = scale.addListener(({ value }) => {
+      lastScale.current = value;
+    });
+    return () => scale.removeListener(id);
+  }, [scale]);
 
   useEffect(() => {
     if (!isActive) {
@@ -61,7 +69,7 @@ export default function BreathingCircle({
         targetOpacity = 1;
         break;
       case 'hold':
-        targetScale = scale.__getValue?.() ?? MAX_SCALE;
+        targetScale = lastScale.current;
         targetOpacity = 0.9;
         break;
       case 'exhale':

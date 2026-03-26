@@ -349,26 +349,18 @@ const getAnxietyTrend = async (req, res) => {
       anxietyLevel: { $ne: null },
     }).sort({ date: 1 });
 
-    // Group entries by calendar day and compute daily averages
-    const byDay = {};
-    entries.forEach((entry) => {
-      const key = entry.date.toISOString().split('T')[0];
-      if (!byDay[key]) byDay[key] = { total: 0, count: 0, moodTotal: 0 };
-      byDay[key].total += entry.anxietyLevel;
-      byDay[key].moodTotal += entry.mood;
-      byDay[key].count += 1;
-    });
+    // Each journal entry becomes its own data point (no grouping/averaging)
+    const points = entries.map((entry) => ({
+      date: entry.date.toISOString(),
+      anxiety: Math.round(entry.anxietyLevel * 100) / 100,
+      mood: 0,
+      entryCount: 1,
+    }));
 
-    const points = Object.entries(byDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, { total, count, moodTotal }]) => ({
-        date,
-        anxiety: Math.round((total / count) * 100) / 100,
-        mood: Math.round((moodTotal / count) * 10) / 10,
-        entryCount: count,
-      }));
+    // Count unique calendar days
+    const uniqueDays = new Set(points.map((p) => p.date.split('T')[0]));
 
-    // Generate insight by comparing recent vs earlier halves
+    // Trend: compare the recent half of entries against the earlier half
     const midpoint = Math.floor(points.length / 2);
     const recentSlice = points.slice(midpoint);
     const earlierSlice = points.slice(0, midpoint);
@@ -390,13 +382,12 @@ const getAnxietyTrend = async (req, res) => {
       else if (change > 5) trendDirection = 'increasing';
     }
 
-    // Find peak anxiety day
     let peakDay = null;
     if (points.length > 0) {
       const peak = points.reduce((max, p) =>
         p.anxiety > max.anxiety ? p : max,
       );
-      peakDay = { date: peak.date, anxiety: peak.anxiety };
+      peakDay = { date: peak.date.split('T')[0], anxiety: peak.anxiety };
     }
 
     const overallAvg =
@@ -411,7 +402,7 @@ const getAnxietyTrend = async (req, res) => {
       data: {
         points,
         summary: {
-          totalDays: points.length,
+          totalDays: uniqueDays.size,
           totalEntries: entries.length,
           averageAnxiety: overallAvg,
           trendDirection,

@@ -1,12 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_CONFIG from '../config/api';
+import { isTokenExpired, handleSessionExpired } from './sessionManager';
 
-// Helper function to get the base URL dynamically (evaluates on each call)
 const getBaseUrl = (): string => API_CONFIG.BASE_URL;
 
-// Token storage keys
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
+
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register'];
 
 // Types
 export interface User {
@@ -167,12 +168,28 @@ export const clearAuthData = async (): Promise<void> => {
   }
 };
 
-// API request helper
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
 const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> => {
   const token = await getStoredToken();
+
+  if (token && !AUTH_ENDPOINTS.includes(endpoint) && isTokenExpired(token)) {
+    await handleSessionExpired();
+    throw new ApiError('Token has expired', 401, 'TOKEN_EXPIRED');
+  }
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -182,21 +199,19 @@ const apiRequest = async <T>(
 
   try {
     const url = `${getBaseUrl()}${endpoint}`;
-   
 
     const response = await fetch(url, {
       ...options,
       headers,
     });
 
-
-    // Check if response is ok before trying to parse JSON
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let errorCode: string | undefined;
       try {
         const errorData = await response.json();
+        errorCode = errorData.code;
 
-        // Handle validation errors (400 with errors array)
         if (
           errorData.errors &&
           Array.isArray(errorData.errors) &&
@@ -208,28 +223,38 @@ const apiRequest = async <T>(
             )
             .join(', ');
           errorMessage = validationErrors;
-          console.error('Validation errors:', errorData.errors);
         } else if (errorData.message) {
           errorMessage = errorData.message;
         }
-      } catch (e) {
-        // If response is not JSON, use the status text
+      } catch {
+        // Response is not JSON - use status text
       }
-      throw new Error(errorMessage);
+
+      if (
+        response.status === 401 &&
+        !AUTH_ENDPOINTS.includes(endpoint)
+      ) {
+        await handleSessionExpired();
+        throw new ApiError(errorMessage, 401, errorCode || 'TOKEN_EXPIRED');
+      }
+
+      throw new ApiError(errorMessage, response.status, errorCode);
     }
 
     const data = await response.json();
     return data;
   } catch (error: any) {
-    // Handle network errors
+    if (error instanceof ApiError) throw error;
+
     if (
       error.message === 'Network request failed' ||
       error.message === 'Failed to fetch'
     ) {
       const baseUrl = getBaseUrl();
-      console.error('Network error - Check if server is running at:', baseUrl);
-      throw new Error(
+      throw new ApiError(
         `Cannot connect to server. Please ensure the server is running at ${baseUrl}`,
+        0,
+        'NETWORK_ERROR',
       );
     }
     throw error;

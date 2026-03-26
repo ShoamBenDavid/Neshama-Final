@@ -6,12 +6,22 @@ import authReducer, {
   checkAuthStatus,
   clearError,
   setUser,
+  sessionExpired,
 } from '../../app/store/slices/authSlice';
 
 jest.mock('../../app/config/api', () => ({
   __esModule: true,
   default: { BASE_URL: 'http://localhost:5000/api', DEV_PORT: 5000 },
 }));
+
+function createFakeJwt(expInSeconds: number): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
+  const payload = Buffer.from(JSON.stringify({ id: '1', exp: expInSeconds })).toString('base64');
+  return `${header}.${payload}.fake-sig`;
+}
+
+const VALID_TOKEN = createFakeJwt(Math.floor(Date.now() / 1000) + 3600);
+const EXPIRED_TOKEN = createFakeJwt(Math.floor(Date.now() / 1000) - 3600);
 
 function createTestStore() {
   return configureStore({
@@ -239,13 +249,23 @@ describe('authSlice', () => {
       expect(state.isCheckingAuth).toBe(false);
     });
 
-    it('should authenticate with stored token and server validation', async () => {
+    it('should return unauthenticated when no stored token', async () => {
+      const store = createTestStore();
+
+      await store.dispatch(checkAuthStatus());
+
+      const state = store.getState().auth;
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
+    });
+
+    it('should authenticate with valid stored token and server validation', async () => {
       const store = createTestStore();
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       AsyncStorage.getItem
-        .mockResolvedValueOnce('stored-token')
+        .mockResolvedValueOnce(VALID_TOKEN)
         .mockResolvedValueOnce(JSON.stringify({ id: '1', name: 'Test', email: 'test@example.com', createdAt: '2024-01-01' }))
-        .mockResolvedValueOnce('stored-token');
+        .mockResolvedValueOnce(VALID_TOKEN);
 
       mockFetchResponse({
         success: true,
@@ -260,15 +280,32 @@ describe('authSlice', () => {
       expect(state.user?.name).toBe('Test');
     });
 
-    it('should fallback to stored data on server error', async () => {
+    it('should reject expired token on startup and clear auth data', async () => {
       const store = createTestStore();
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       AsyncStorage.getItem
-        .mockResolvedValueOnce('stored-token')
-        .mockResolvedValueOnce(JSON.stringify({ id: '1', name: 'Offline', email: 'off@example.com', createdAt: '2024-01-01' }))
-        .mockResolvedValueOnce('stored-token');
+        .mockResolvedValueOnce(EXPIRED_TOKEN)
+        .mockResolvedValueOnce(JSON.stringify({ id: '1', name: 'Old', email: 'old@example.com', createdAt: '2024-01-01' }));
 
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      await store.dispatch(checkAuthStatus());
+
+      const state = store.getState().auth;
+      expect(state.isCheckingAuth).toBe(false);
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
+      expect(state.token).toBeNull();
+      expect(AsyncStorage.multiRemove).toHaveBeenCalled();
+    });
+
+    it('should fallback to stored data on network error with valid token', async () => {
+      const store = createTestStore();
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      AsyncStorage.getItem
+        .mockResolvedValueOnce(VALID_TOKEN)
+        .mockResolvedValueOnce(JSON.stringify({ id: '1', name: 'Offline', email: 'off@example.com', createdAt: '2024-01-01' }))
+        .mockResolvedValueOnce(VALID_TOKEN);
+
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network request failed'));
 
       await store.dispatch(checkAuthStatus());
 
@@ -276,6 +313,49 @@ describe('authSlice', () => {
       expect(state.isCheckingAuth).toBe(false);
       expect(state.isAuthenticated).toBe(true);
       expect(state.user?.name).toBe('Offline');
+    });
+
+    it('should reject when server returns 401 with valid-looking token', async () => {
+      const store = createTestStore();
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      AsyncStorage.getItem
+        .mockResolvedValueOnce(VALID_TOKEN)
+        .mockResolvedValueOnce(JSON.stringify({ id: '1', name: 'Test', email: 'test@example.com', createdAt: '2024-01-01' }))
+        .mockResolvedValueOnce(VALID_TOKEN);
+
+      mockFetchResponse({ success: false, code: 'TOKEN_INVALID', message: 'Not authorized' }, 401);
+
+      await store.dispatch(checkAuthStatus());
+
+      const state = store.getState().auth;
+      expect(state.isCheckingAuth).toBe(false);
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
+    });
+  });
+
+  describe('sessionExpired', () => {
+    it('should clear all auth state', async () => {
+      const store = createTestStore();
+
+      const loginResponse = {
+        success: true,
+        data: {
+          user: { id: '1', name: 'Test', email: 'test@example.com', createdAt: '2024-01-01' },
+          token: 'jwt-token',
+        },
+      };
+      mockFetchResponse(loginResponse);
+      await store.dispatch(loginUser({ email: 'test@example.com', password: 'password123' }));
+      expect(store.getState().auth.isAuthenticated).toBe(true);
+
+      store.dispatch(sessionExpired());
+
+      const state = store.getState().auth;
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
+      expect(state.token).toBeNull();
+      expect(state.error).toBeNull();
     });
   });
 

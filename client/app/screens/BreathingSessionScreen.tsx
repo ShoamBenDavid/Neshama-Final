@@ -29,7 +29,7 @@ export default function BreathingSessionScreen() {
   const [currentRound, setCurrentRound] = useState(1);
   const [countdown, setCountdown] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const currentPhase = exercise.phases[currentPhaseIndex];
 

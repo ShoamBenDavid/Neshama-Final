@@ -22,6 +22,12 @@ export const ROUTES = {
   PROFILE: 'Profile',
   SETTINGS: 'Settings',
 
+  // Settings sub-screens
+  NOTIFICATION_OPTIONS: 'NotificationOptions',
+  PRIVACY_SECURITY: 'PrivacySecurity',
+  HELP_FAQ: 'HelpFAQ',
+  ABOUT_NESHAMA: 'AboutNeshama',
+
   // Wellness Content
   BREATHING_EXERCISES: 'BreathingExercises',
   BREATHING_SESSION: 'BreathingSession',

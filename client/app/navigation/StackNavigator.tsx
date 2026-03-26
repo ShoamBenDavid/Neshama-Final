@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Alert } from 'react-native';
 
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { checkAuthStatus } from '../store/slices/authSlice';
+import { checkAuthStatus, sessionExpired } from '../store/slices/authSlice';
+import { onSessionExpired } from '../services/sessionManager';
+import { useTranslation } from '../i18n';
 import { colors } from '../theme/colors';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -30,6 +32,10 @@ import YogaDetailScreen from '../screens/YogaDetailScreen';
 import ArticlesScreen from '../screens/ArticlesScreen';
 import ArticleDetailScreen from '../screens/ArticleDetailScreen';
 import AudioRelaxationScreen from '../screens/AudioRelaxationScreen';
+import NotificationOptionsScreen from '../screens/NotificationOptionsScreen';
+import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
+import HelpFAQScreen from '../screens/HelpFAQScreen';
+import AboutNeshamaScreen from '../screens/AboutNeshamaScreen';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -45,6 +51,10 @@ export type RootStackParamList = {
   CreateForumPost: undefined;
   Profile: undefined;
   Settings: undefined;
+  NotificationOptions: undefined;
+  PrivacySecurity: undefined;
+  HelpFAQ: undefined;
+  AboutNeshama: undefined;
   BreathingExercises: undefined;
   BreathingSession: { exerciseId: string };
   MeditationLibrary: undefined;
@@ -99,6 +109,10 @@ function MainAppNavigator() {
       <Stack.Screen name="CreateForumPost" component={CreateForumPostScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="NotificationOptions" component={NotificationOptionsScreen} />
+      <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+      <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
+      <Stack.Screen name="AboutNeshama" component={AboutNeshamaScreen} />
       <Stack.Screen name="BreathingExercises" component={BreathingExercisesScreen} />
       <Stack.Screen name="BreathingSession" component={BreathingSessionScreen} />
       <Stack.Screen name="MeditationLibrary" component={MeditationLibraryScreen} />
@@ -117,6 +131,19 @@ export default function StackNavigator() {
   const { isAuthenticated, isCheckingAuth } = useAppSelector(
     (state) => state.auth,
   );
+  const { t } = useTranslation();
+
+  const handleSessionExpired = useCallback(() => {
+    dispatch(sessionExpired());
+    Alert.alert(
+      t('auth.sessionExpiredTitle'),
+      t('auth.sessionExpiredMessage'),
+    );
+  }, [dispatch, t]);
+
+  useEffect(() => {
+    return onSessionExpired(handleSessionExpired);
+  }, [handleSessionExpired]);
 
   useEffect(() => {
     dispatch(checkAuthStatus());

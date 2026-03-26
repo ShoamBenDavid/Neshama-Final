@@ -47,22 +47,22 @@ export default function ProfileScreen() {
     {
       icon: 'notifications-outline' as const,
       label: t('profile.notifications'),
-      onPress: () => {},
+      onPress: () => navigation.navigate('NotificationOptions'),
     },
     {
       icon: 'shield-checkmark-outline' as const,
       label: t('profile.privacySecurity'),
-      onPress: () => {},
+      onPress: () => navigation.navigate('PrivacySecurity'),
     },
     {
       icon: 'help-circle-outline' as const,
       label: t('profile.helpFAQ'),
-      onPress: () => {},
+      onPress: () => navigation.navigate('HelpFAQ'),
     },
     {
       icon: 'information-circle-outline' as const,
       label: t('profile.aboutNeshama'),
-      onPress: () => {},
+      onPress: () => navigation.navigate('AboutNeshama'),
     },
   ];
 

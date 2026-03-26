@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenWrapper, Card, LoadingState, ErrorState } from '../components/ui';
@@ -24,8 +24,18 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchJournalStats());
-    }, [dispatch]),
+      trend.refresh();
+    }, [dispatch, trend.refresh]),
   );
+
+  const trendStat = useMemo(() => {
+    if (!trend.summary) return { label: '--', icon: 'analytics-outline' as const };
+    const dir = trend.summary.trendDirection;
+    const pct = trend.summary.trendPercent;
+    if (dir === 'improving') return { label: `↓${pct}%`, icon: 'trending-down-outline' as const };
+    if (dir === 'increasing') return { label: `↑${pct}%`, icon: 'trending-up-outline' as const };
+    return { label: `→${pct}%`, icon: 'analytics-outline' as const };
+  }, [trend.summary]);
 
   if (isStatsLoading && !stats) {
     return <LoadingState message={t('dashboard.loadingDashboard')} />;
@@ -51,10 +61,16 @@ export default function DashboardScreen() {
         />
         <View style={{ width: spacing.md }} />
         <StatCard
-          icon="happy-outline"
-          label={t('dashboard.avgMood')}
-          value={stats?.avgMood || '--'}
-          color={colors.secondary}
+          icon={trendStat.icon}
+          label={t('dashboard.anxietyTrend')}
+          value={trendStat.label}
+          color={
+            trend.summary?.trendDirection === 'improving'
+              ? '#43E97B'
+              : trend.summary?.trendDirection === 'increasing'
+                ? '#FD746C'
+                : colors.secondary
+          }
         />
         <View style={{ width: spacing.md }} />
         <StatCard
@@ -76,12 +92,6 @@ export default function DashboardScreen() {
         <Card style={styles.progressCard}>
           <Text style={styles.cardTitle}>{t('dashboard.yourProgress')}</Text>
           <ProgressBar
-            value={progress.moodRatio}
-            label={t('dashboard.averageMood')}
-            valueLabel={`${progress.moodAvg.toFixed(1)} / 5 (${(progress.moodRatio * 100).toFixed(0)}%)`}
-            color={colors.secondary}
-          />
-          <ProgressBar
             value={progress.anxietyManagedRatio}
             label={t('dashboard.anxietyLevel')}
             valueLabel={t('dashboard.managed', {
@@ -95,12 +105,6 @@ export default function DashboardScreen() {
       {stats && (
         <Card style={styles.insightCard}>
           <Text style={styles.cardTitle}>{t('dashboard.insights')}</Text>
-          <View style={styles.insightRow}>
-            <View style={[styles.insightDot, { backgroundColor: colors.secondary }]} />
-            <Text style={styles.insightText}>
-              {t('dashboard.goodDaysInsight', { count: stats.goodDays })}
-            </Text>
-          </View>
           {stats.anxietyReduction !== '0%' && (
             <View style={styles.insightRow}>
               <View style={[styles.insightDot, { backgroundColor: colors.primary }]} />
