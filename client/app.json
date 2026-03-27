@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Neshama",
+    "slug": "Neshama",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./app/assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "317af870-b18a-4e03-9963-f29e50e2f98c"
+      }
+    },
+    "owner": "shoam333",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/317af870-b18a-4e03-9963-f29e50e2f98c"
+    }
+  }
+}
