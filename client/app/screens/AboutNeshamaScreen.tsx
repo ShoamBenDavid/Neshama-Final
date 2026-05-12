@@ -1,14 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, Image, Linking, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 import { ScreenWrapper, Header, Card, SectionHeader, LinkRow } from '../components/ui';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius } from '../theme/spacing';
 import { useTranslation } from '../i18n';
+import type { RootStackParamList } from '../navigation/StackNavigator';
 
 const APP_VERSION = '1.0.0';
 const BUILD_NUMBER = '1';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'AboutNeshama'>;
 
 interface FeatureItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -31,12 +36,11 @@ function FeatureItem({ icon, iconColor, title, description }: FeatureItemProps) 
   );
 }
 
-export default function AboutNeshamaScreen() {
+export default function AboutNeshamaScreen({ navigation }: Props) {
   const { t } = useTranslation();
 
   const handleOpenLink = (type: 'terms' | 'privacy' | 'licenses') => {
-    // TODO: replace with actual URLs when available
-    const urls: Record<string, string> = {
+    const urls = {
       terms: 'https://neshamaapp.com/terms',
       privacy: 'https://neshamaapp.com/privacy',
       licenses: 'https://neshamaapp.com/licenses',
@@ -52,7 +56,6 @@ export default function AboutNeshamaScreen() {
     <ScreenWrapper>
       <Header title={t('aboutApp.title')} showBack />
 
-      {/* Branding */}
       <View style={styles.brandSection}>
         <View style={styles.logoContainer}>
           <Image
@@ -65,45 +68,52 @@ export default function AboutNeshamaScreen() {
         <Text style={styles.tagline}>{t('welcome.tagline')}</Text>
       </View>
 
-      {/* Mission */}
       <SectionHeader title={t('aboutApp.mission')} />
       <Card style={styles.card}>
         <Text style={styles.missionText}>{t('aboutApp.missionText')}</Text>
       </Card>
 
-      {/* Features */}
       <SectionHeader title={t('aboutApp.whatWeOffer')} />
       <Card style={styles.card}>
-        <FeatureItem
-          icon="chatbubble-ellipses"
-          iconColor={colors.primary}
-          title={t('aboutApp.featureChat')}
-          description={t('aboutApp.featureChatDesc')}
-        />
+          <FeatureItem
+            icon="chatbubble-ellipses"
+            iconColor={colors.gradients.primary[1]}
+            title={t('aboutApp.featureChat')}
+            description={t('aboutApp.featureChatDesc')}
+          />
+
         <View style={styles.divider} />
-        <FeatureItem
-          icon="book"
-          iconColor={colors.secondary}
-          title={t('aboutApp.featureJournal')}
-          description={t('aboutApp.featureJournalDesc')}
-        />
+
+          <FeatureItem
+            icon="book"
+            iconColor={colors.gradients.primary[1]}
+            title={t('aboutApp.featureJournal')}
+            description={t('aboutApp.featureJournalDesc')}
+          />
+
         <View style={styles.divider} />
-        <FeatureItem
-          icon="leaf"
-          iconColor={colors.accent}
-          title={t('aboutApp.featureCalm')}
-          description={t('aboutApp.featureCalmDesc')}
-        />
+
+          <FeatureItem
+            icon="leaf"
+            iconColor={colors.gradients.primary[1]}
+            title={t('aboutApp.featureCalm')}
+            description={t('aboutApp.featureCalmDesc')}
+          />
+
         <View style={styles.divider} />
-        <FeatureItem
-          icon="people"
-          iconColor={colors.status.infoDark}
-          title={t('aboutApp.featureCommunity')}
-          description={t('aboutApp.featureCommunityDesc')}
-        />
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Forum' })}
+        >
+          <FeatureItem
+            icon="people"
+            iconColor={colors.gradients.primary[1]}
+            title={t('aboutApp.featureCommunity')}
+            description={t('aboutApp.featureCommunityDesc')}
+          />
+        </TouchableOpacity>
       </Card>
 
-      {/* Version */}
       <SectionHeader title={t('aboutApp.version')} />
       <Card style={styles.card}>
         <View style={styles.versionRow}>
@@ -117,7 +127,6 @@ export default function AboutNeshamaScreen() {
         </View>
       </Card>
 
-      {/* Team */}
       <SectionHeader title={t('aboutApp.team')} />
       <Card style={styles.card}>
         <View style={styles.teamRow}>
@@ -128,7 +137,6 @@ export default function AboutNeshamaScreen() {
         </View>
       </Card>
 
-      {/* Contact */}
       <SectionHeader title={t('aboutApp.contact')} />
       <Card style={styles.card}>
         <Text style={styles.contactDesc}>{t('aboutApp.contactDesc')}</Text>
@@ -140,9 +148,6 @@ export default function AboutNeshamaScreen() {
         />
       </Card>
 
-    
-
-      {/* Footer */}
       <View style={styles.footer}>
         <Ionicons name="heart" size={14} color={colors.status.error} />
         <Text style={styles.footerText}>{t('aboutApp.madeWith')}</Text>

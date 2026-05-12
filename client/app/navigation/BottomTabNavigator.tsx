@@ -85,7 +85,7 @@ export default function BottomTabNavigator() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.tab.background,
-    borderTopWidth: 0,
+    borderTopWidth: 1,
     height: 88,
     paddingTop: spacing.sm,
     paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.sm,

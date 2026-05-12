@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Linking } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Header, Card, Button } from '../components/ui';
+import { ScreenWrapper, Header, Card } from '../components/ui';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
-import { yogaSessions } from '../content';
+import { getYogaSessionById } from '../content/localizedContent';
 import type { YogaPose } from '../content/types';
 import type { RootStackParamList } from '../navigation/StackNavigator';
 import { useTranslation } from '../i18n';
@@ -39,10 +39,14 @@ function PoseCard({ pose, index }: { pose: YogaPose; index: number }) {
 }
 
 export default function YogaDetailScreen() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const route = useRoute<RouteParams>();
-  const navigation = useNavigation();
-  const session = yogaSessions.find((s) => s.id === route.params.sessionId);
+  const session = getYogaSessionById(route.params.sessionId, language);
+  const getDifficultyLabel = (difficulty: 'beginner' | 'intermediate' | 'advanced') => {
+    if (difficulty === 'intermediate') return t('yoga.difficultyIntermediate');
+    if (difficulty === 'advanced') return t('yoga.difficultyAdvanced');
+    return t('yoga.difficultyBeginner');
+  };
 
   if (!session) return null;
 
@@ -75,11 +79,11 @@ export default function YogaDetailScreen() {
                 <Text style={styles.headerTitle}>{session.title}</Text>
                 <Text style={styles.headerDesc}>{session.description}</Text>
                 <View style={styles.headerMeta}>
-                  <Text style={styles.metaText}>{session.duration} min</Text>
+                  <Text style={styles.metaText}>{session.duration} {t('common.min')}</Text>
                   <View style={styles.dot} />
-                  <Text style={styles.metaText}>{session.difficulty}</Text>
+                  <Text style={styles.metaText}>{getDifficultyLabel(session.difficulty)}</Text>
                   <View style={styles.dot} />
-                  <Text style={styles.metaText}>{session.poses.length} poses</Text>
+                  <Text style={styles.metaText}>{t('common.poses', { count: session.poses.length })}</Text>
                 </View>
               </View>
             </LinearGradient>

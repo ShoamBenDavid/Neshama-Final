@@ -14,7 +14,28 @@ import type { RootStackParamList } from '../navigation/StackNavigator';
 
 type RouteParams = RouteProp<RootStackParamList, 'CreateJournal'>;
 
-const SUGGESTED_TAGS = ['gratitude', 'anxiety', 'sleep', 'exercise', 'therapy', 'work', 'relationships', 'mindfulness'];
+const SUGGESTED_TAGS = [
+  'anxiety',
+  'stress',
+  'sadness',
+  'depression',
+  'anger',
+  'loneliness',
+  'overthinking',
+  'sleep',
+  'energy',
+  'motivation',
+  'gratitude',
+  'success',
+  'self-care',
+  'relationships',
+  'family',
+  'studies',
+  'work',
+  'health',
+  'routine',
+  'general',
+];
 
 export default function CreateJournalScreen() {
   const navigation = useNavigation();

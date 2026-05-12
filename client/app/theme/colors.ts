@@ -1,9 +1,9 @@
 export const colors = {
-  primary: '#5B8FB9',
+  primary: '#000000',
   primaryLight: '#8BB8D6',
   primaryDark: '#3D6F94',
 
-  secondary: '#7BC8A4',
+  secondary: 'black',
   secondaryLight: '#A8DEC4',
   secondaryDark: '#5AA882',
 
@@ -11,7 +11,7 @@ export const colors = {
   accentLight: '#BEB4D8',
   accentDark: '#7A6BA6',
 
-  background: '#FBF8F3',
+  background: 'white',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
 
@@ -71,7 +71,7 @@ export const colors = {
   shadow: '#2D3436',
 
   tab: {
-    active: '#5B8FB9',
+    active: '#black',
     inactive: '#B2BEC3',
     background: '#FFFFFF',
   },

@@ -8,7 +8,7 @@ import { ScreenWrapper, Header } from '../components/ui';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
-import { wellnessArticles } from '../content';
+import { getWellnessArticles } from '../content/localizedContent';
 import type { RootStackParamList } from '../navigation/StackNavigator';
 import { useTranslation } from '../i18n';
 
@@ -16,14 +16,15 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ArticlesScreen() {
   const navigation = useNavigation<Nav>();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const articles = getWellnessArticles(language);
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
       <Header title={t('articles.title')} showBack subtitle={t('articles.subtitle')} />
 
       <FlatList
-        data={wellnessArticles}
+        data={articles}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity

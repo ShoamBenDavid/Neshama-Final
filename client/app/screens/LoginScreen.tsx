@@ -21,6 +21,21 @@ export default function LoginScreen() {
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const { t } = useTranslation();
 
+  const getLoginErrorMessage = React.useCallback((errorCodeOrMessage?: string | null) => {
+    switch (errorCodeOrMessage) {
+      case 'USER_NOT_FOUND':
+        return t('auth.userNotFound');
+      case 'INVALID_PASSWORD':
+        return t('auth.invalidPassword');
+      case 'ACCOUNT_DEACTIVATED':
+        return t('auth.accountDeactivated');
+      case 'INVALID_CREDENTIALS':
+        return t('auth.invalidCredentials');
+      default:
+        return t('auth.loginTryAgain');
+    }
+  }, [t]);
+
   const LoginSchema = useMemo(() => Yup.object().shape({
     email: Yup.string().email(t('validation.emailInvalid')).required(t('validation.emailRequired')),
     password: Yup.string().min(6, t('validation.passwordMinLength')).required(t('validation.passwordRequired')),
@@ -35,7 +50,7 @@ export default function LoginScreen() {
   const handleLogin = async (values: { email: string; password: string }) => {
     const result = await dispatch(loginUser(values));
     if (loginUser.rejected.match(result)) {
-      Alert.alert(t('auth.loginFailed'), result.payload as string);
+      Alert.alert(t('auth.loginFailed'), getLoginErrorMessage(result.payload as string));
     }
   };
 
@@ -54,7 +69,7 @@ export default function LoginScreen() {
 
           {error && (
             <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{getLoginErrorMessage(error)}</Text>
             </View>
           )}
 

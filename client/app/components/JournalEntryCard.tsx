@@ -23,6 +23,27 @@ interface JournalEntryCardProps {
 
 export default function JournalEntryCard({ entry, onPress }: JournalEntryCardProps) {
   const { t } = useTranslation();
+  const moodLabelByValue: Record<number, string> = {
+    1: t('moods.struggling'),
+    2: t('moods.low'),
+    3: t('moods.okay'),
+    4: t('moods.good'),
+    5: t('moods.great'),
+  };
+
+  const getTagLabel = (tag: string) => {
+    const normalizedTag = tag.trim().toLowerCase().replace(/\s+/g, '');
+    const translated = t(`tags.${normalizedTag}`);
+    return translated === `tags.${normalizedTag}` ? tag : translated;
+  };
+
+  const getAnxietyLabel = (label: string) => {
+    const normalizedLabel = label.trim().toLowerCase();
+    if (normalizedLabel === 'high') return t('journal.anxietyLevelHigh');
+    if (normalizedLabel === 'moderate') return t('journal.anxietyLevelModerate');
+    if (normalizedLabel === 'low') return t('journal.anxietyLevelLow');
+    return label;
+  };
 
   return (
     <Card onPress={onPress} style={styles.card}>
@@ -30,7 +51,7 @@ export default function JournalEntryCard({ entry, onPress }: JournalEntryCardPro
         <View style={styles.moodBadge}>
           <Text style={styles.moodEmoji}>{MOOD_EMOJIS[entry.mood] || '😐'}</Text>
           <Text style={[styles.moodLabel, { color: colors.mood[entry.mood] || colors.text.secondary }]}>
-            {colors.moodLabel[entry.mood] || t('common.unknown')}
+            {moodLabelByValue[entry.mood] || t('common.unknown')}
           </Text>
         </View>
         <View style={styles.dateContainer}>
@@ -46,7 +67,7 @@ export default function JournalEntryCard({ entry, onPress }: JournalEntryCardPro
         <View style={styles.tagsRow}>
           {entry.tags.slice(0, 3).map((tag, index) => (
             <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
+              <Text style={styles.tagText}>{getTagLabel(tag)}</Text>
             </View>
           ))}
           {entry.tags.length > 3 && (
@@ -59,7 +80,7 @@ export default function JournalEntryCard({ entry, onPress }: JournalEntryCardPro
         <View style={styles.anxietyRow}>
           <Ionicons name="pulse-outline" size={14} color={colors.text.tertiary} />
           <Text style={styles.anxietyText}>
-            {t('journal.anxietyLabel', { label: entry.anxietyLabel })}
+            {t('journal.anxietyLabel', { label: getAnxietyLabel(entry.anxietyLabel) })}
           </Text>
         </View>
       )}

@@ -8,7 +8,7 @@ import { Header } from '../components/ui';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius } from '../theme/spacing';
-import { wellnessArticles } from '../content';
+import { getWellnessArticleById } from '../content/localizedContent';
 import type { RootStackParamList } from '../navigation/StackNavigator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n';
@@ -16,10 +16,10 @@ import { useTranslation } from '../i18n';
 type RouteParams = RouteProp<RootStackParamList, 'ArticleDetail'>;
 
 export default function ArticleDetailScreen() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteParams>();
-  const article = wellnessArticles.find((a) => a.id === route.params.articleId);
+  const article = getWellnessArticleById(route.params.articleId, language);
   const [readProgress, setReadProgress] = useState(0);
 
   if (!article) return null;

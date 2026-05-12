@@ -57,14 +57,14 @@ export default function DashboardScreen() {
           icon="flame-outline"
           label={t('dashboard.streak')}
           value={stats?.weeklyStreak || '0'}
-          color={colors.status.warningDark}
+          color={Number(stats?.weeklyStreak) > 3 ? colors.category.success : colors.category.general}
         />
         <View style={{ width: spacing.md }} />
         <StatCard
           icon={trendStat.icon}
           label={t('dashboard.anxietyTrend')}
           value={trendStat.label}
-          color={
+          color={ 
             trend.summary?.trendDirection === 'improving'
               ? '#43E97B'
               : trend.summary?.trendDirection === 'increasing'
@@ -77,7 +77,7 @@ export default function DashboardScreen() {
           icon="book-outline"
           label={t('dashboard.entries')}
           value={stats?.totalEntries || 0}
-          color={colors.primary}
+          color={colors.category.general}
         />
       </View>
 
@@ -102,14 +102,14 @@ export default function DashboardScreen() {
         </Card>
       )}
 
-      {stats && (
+      {progress.hasData && (
         <Card style={styles.insightCard}>
           <Text style={styles.cardTitle}>{t('dashboard.insights')}</Text>
-          {stats.anxietyReduction !== '0%' && (
+          {stats?.anxietyReduction !== '0%' && (
             <View style={styles.insightRow}>
               <View style={[styles.insightDot, { backgroundColor: colors.primary }]} />
               <Text style={styles.insightText}>
-                {t('dashboard.anxietyReductionInsight', { value: stats.anxietyReduction })}
+                {t('dashboard.anxietyReductionInsight', { value: stats?.anxietyReduction ?? '0%' })}
               </Text>
             </View>
           )}

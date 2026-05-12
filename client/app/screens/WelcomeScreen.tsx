@@ -27,7 +27,7 @@ export default function WelcomeScreen() {
 
   return (
     <LinearGradient
-      colors={['#F0EDE8', '#E8E0D5', '#FBF8F3']}
+    colors={['#FFFFFF', '#EDEDED', '#FBF8F3']}
       style={styles.container}
     >
       <View style={styles.content}>

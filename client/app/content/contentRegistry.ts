@@ -1,10 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
-import { yogaSessions } from './yogaSessions';
-import { wellnessArticles } from './articles';
-import { getBreathingExercises, getMeditationSessions, getAudioTracks } from './localizedContent';
+import {
+  getBreathingExercises,
+  getMeditationSessions,
+  getAudioTracks,
+  getYogaSessions,
+  getWellnessArticles,
+} from './localizedContent';
 import { getCurrentLanguage, type Language } from '../i18n';
 import type { RootStackParamList } from '../navigation/StackNavigator';
-import type { MeditationSession, BreathingExercise, AudioTrack } from './types';
+import type {
+  MeditationSession,
+  BreathingExercise,
+  AudioTrack,
+  YogaSession,
+  WellnessArticle,
+} from './types';
 
 // ---------------------------------------------------------------------------
 // Core types
@@ -91,8 +101,8 @@ function adaptBreathing(data: BreathingExercise[]): RegistryItem[] {
   }));
 }
 
-function adaptYoga(): RegistryItem[] {
-  return yogaSessions.map((s) => ({
+function adaptYoga(data: YogaSession[]): RegistryItem[] {
+  return data.map((s) => ({
     id: `yoga-${s.id}`,
     title: s.title,
     description: s.description,
@@ -107,8 +117,8 @@ function adaptYoga(): RegistryItem[] {
   }));
 }
 
-function adaptArticles(): RegistryItem[] {
-  return wellnessArticles.map((a) => ({
+function adaptArticles(data: WellnessArticle[]): RegistryItem[] {
+  return data.map((a) => ({
     id: `article-${a.id}`,
     title: a.title,
     description: a.summary,
@@ -149,8 +159,8 @@ function buildForLanguage(lang: Language): RegistryItem[] {
   return [
     ...adaptMeditations(getMeditationSessions(lang)),
     ...adaptBreathing(getBreathingExercises(lang)),
-    ...adaptYoga(),
-    ...adaptArticles(),
+    ...adaptYoga(getYogaSessions(lang)),
+    ...adaptArticles(getWellnessArticles(lang)),
     ...adaptAudio(getAudioTracks(lang)),
   ];
 }

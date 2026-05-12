@@ -13,7 +13,7 @@ export interface UserProgress {
 
 export function useUserProgress(): UserProgress {
   const dispatch = useAppDispatch();
-  const { progress, isStatsLoading, error } = useAppSelector(
+  const { progress, stats, isStatsLoading, error } = useAppSelector(
     (state) => state.journal,
   );
 
@@ -23,7 +23,7 @@ export function useUserProgress(): UserProgress {
 
   return useMemo(() => {
     const anxiety = progress?.anxietyLevel ?? 0;
-    const hasRealData = progress !== null;
+    const hasRealData = (stats?.totalEntries ?? 0) > 0;
 
     return {
       anxietyLevel: anxiety,
@@ -33,5 +33,5 @@ export function useUserProgress(): UserProgress {
       error,
       refresh,
     };
-  }, [progress, isStatsLoading, error, refresh]);
+  }, [progress, stats, isStatsLoading, error, refresh]);
 }
