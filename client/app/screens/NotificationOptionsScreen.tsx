@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, Linking, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Header, Card, SectionHeader, SettingToggleRow } from '../components/ui';
@@ -7,8 +7,15 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius } from '../theme/spacing';
 import { useTranslation } from '../i18n';
+import {
+  NOTIF_PREFS_STORAGE_KEY,
+  applyNotificationPrefs,
+  ensureNotificationPermissions,
+  notificationsSupported,
+  type NotificationLabels,
+} from '../services/notifications';
 
-const STORAGE_KEY = '@neshama_notification_prefs';
+const STORAGE_KEY = NOTIF_PREFS_STORAGE_KEY;
 const SAVE_DEBOUNCE_MS = 600;
 
 export interface NotificationPrefs {
@@ -38,48 +45,111 @@ export default function NotificationOptionsScreen() {
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestPrefs = useRef<NotificationPrefs>(DEFAULT_PREFS);
+  const hasPromptedPermission = useRef(false);
+
+  const buildLabels = useCallback(
+    (): NotificationLabels => ({
+      dailyMoodTitle: t('notifications.dailyMood'),
+      dailyMoodBody: t('notifications.dailyMoodDesc'),
+      journalTitle: t('notifications.journal'),
+      journalBody: t('notifications.journalDesc'),
+      breathingTitle: t('notifications.breathing'),
+      breathingBody: t('notifications.breathingDesc'),
+      communityTitle: t('notifications.communityUpdates'),
+      communityBody: t('notifications.communityDesc'),
+      supportCenterTitle: t('notifications.supportCenter'),
+      supportCenterBody: t('notifications.supportCenterDesc'),
+      generalTitle: t('notifications.general'),
+      generalBody: t('notifications.generalDesc'),
+    }),
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      let active: NotificationPrefs = DEFAULT_PREFS;
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!cancelled && raw) {
+        if (raw) {
           const parsed = JSON.parse(raw) as Partial<NotificationPrefs>;
-          const merged = { ...DEFAULT_PREFS, ...parsed };
-          setPrefs(merged);
-          latestPrefs.current = merged;
+          active = { ...DEFAULT_PREFS, ...parsed };
+        }
+        if (!cancelled) {
+          setPrefs(active);
+          latestPrefs.current = active;
         }
       } catch {
         // Storage read failed — keep defaults silently
       } finally {
         if (!cancelled) setIsLoading(false);
       }
+
+      // Sync OS scheduler with persisted prefs on mount so that
+      // notifications keep firing across reinstalls / app updates.
+      // Skip entirely in unsupported environments (e.g. Expo Go + Android).
+      if (!notificationsSupported) return;
+      try {
+        const granted = await ensureNotificationPermissions();
+        if (!cancelled) setPermissionDenied(!granted);
+        if (granted) {
+          await applyNotificationPrefs(active, buildLabels());
+        }
+      } catch {
+        // Silently ignore — user can re-toggle to retry.
+      }
     })();
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const persistPrefs = useCallback((next: NotificationPrefs) => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-
-    setSaveStatus('saving');
-    saveTimer.current = setTimeout(async () => {
-      try {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        // TODO: sync with backend when user notification preferences endpoint is available
-        // e.g. await userAPI.updateNotificationPrefs(next);
-        setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 1800);
-      } catch {
-        setSaveStatus('error');
-        setTimeout(() => setSaveStatus('idle'), 2500);
-      }
-    }, SAVE_DEBOUNCE_MS);
+  const openSystemSettings = useCallback(() => {
+    Linking.openSettings().catch(() => {
+      // User can still open settings manually.
+    });
   }, []);
+
+  const warnPermissionDenied = useCallback(() => {
+    if (hasPromptedPermission.current) return;
+    hasPromptedPermission.current = true;
+    Alert.alert(
+      t('notifications.title'),
+      t('notifications.permissionDeniedMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('notifications.openSettings'), onPress: openSystemSettings },
+      ],
+    );
+  }, [openSystemSettings, t]);
+
+  const persistPrefs = useCallback(
+    (next: NotificationPrefs) => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+
+      setSaveStatus('saving');
+      saveTimer.current = setTimeout(async () => {
+        try {
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          if (notificationsSupported) {
+            const result = await applyNotificationPrefs(next, buildLabels());
+            setPermissionDenied(result.supported && !result.granted);
+            if (result.supported && !result.granted) warnPermissionDenied();
+          }
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('idle'), 1800);
+        } catch {
+          setSaveStatus('error');
+          setTimeout(() => setSaveStatus('idle'), 2500);
+        }
+      }, SAVE_DEBOUNCE_MS);
+    },
+    [buildLabels, warnPermissionDenied],
+  );
 
   useEffect(() => {
     return () => {
@@ -120,6 +190,52 @@ export default function NotificationOptionsScreen() {
         rightAction={<SaveIndicator status={saveStatus} />}
       />
 
+      {!notificationsSupported && (
+        <View style={styles.infoBanner}>
+          <Ionicons
+            name="information-circle-outline"
+            size={20}
+            color={colors.status.infoDark}
+            style={styles.permissionIcon}
+          />
+          <View style={styles.permissionTextWrap}>
+            <Text style={styles.infoTitle}>
+              {t('notifications.unsupportedTitle')}
+            </Text>
+            <Text style={styles.permissionBody}>
+              {t('notifications.unsupportedMessage')}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {notificationsSupported && permissionDenied && anyEnabled && (
+        <TouchableOpacity
+          style={styles.permissionBanner}
+          onPress={openSystemSettings}
+          activeOpacity={0.85}
+        >
+          <Ionicons
+            name="notifications-off-outline"
+            size={20}
+            color={colors.status.errorDark}
+            style={styles.permissionIcon}
+          />
+          <View style={styles.permissionTextWrap}>
+            <Text style={styles.permissionTitle}>
+              {t('notifications.permissionDeniedTitle')}
+            </Text>
+            <Text style={styles.permissionBody}>
+              {t('notifications.permissionDeniedMessage')}
+            </Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.status.errorDark}
+          />
+        </TouchableOpacity>
+      )}
 
       {/* Reminders */}
       <SectionHeader title={t('notifications.reminders')} />
@@ -270,6 +386,48 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: spacing.sm,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.status.errorDark + '14',
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.status.infoDark + '14',
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  infoTitle: {
+    ...typography.bodySm,
+    color: colors.status.infoDark,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  permissionIcon: {
+    marginEnd: spacing.sm,
+  },
+  permissionTextWrap: {
+    flex: 1,
+  },
+  permissionTitle: {
+    ...typography.bodySm,
+    color: colors.status.errorDark,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  permissionBody: {
+    ...typography.caption,
+    color: colors.text.secondary,
   },
   divider: {
     height: 1,

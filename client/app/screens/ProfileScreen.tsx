@@ -88,21 +88,21 @@ export default function ProfileScreen() {
           icon="book-outline"
           label={t('profile.entries')}
           value={stats?.totalEntries || 0}
-          color={colors.primary}
+          color={colors.category.general}
         />
         <View style={{ width: spacing.md }} />
         <StatCard
           icon="flame-outline"
           label={t('profile.streak')}
           value={stats?.weeklyStreak || '0'}
-          color={colors.status.warningDark}
+          color={Number(stats?.weeklyStreak) > 3 ? colors.category.success : colors.category.general}
         />
         <View style={{ width: spacing.md }} />
         <StatCard
           icon="happy-outline"
           label={t('profile.avgMood')}
           value={stats?.avgMood || '--'}
-          color={colors.secondary}
+          color={colors.category.general}
         />
       </View>
 

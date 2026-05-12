@@ -17,13 +17,22 @@ interface ForumPostCardProps {
 export default function ForumPostCard({ post, onPress, onLike }: ForumPostCardProps) {
   const { t } = useTranslation();
   const categoryColor = colors.category[post.categoryId] || colors.primary;
+  const categoryLabelById: Record<string, string> = {
+    anxiety: t('forum.categoryAnxiety'),
+    depression: t('forum.categoryDepression'),
+    relationships: t('forum.categoryRelationships'),
+    'work-stress': t('forum.categoryWorkStress'),
+    success: t('forum.categorySuccess'),
+    general: t('forum.categoryGeneral'),
+  };
+  const categoryLabel = categoryLabelById[post.categoryId] ?? post.categoryId.replace('-', ' ');
 
   return (
     <Card onPress={onPress} style={styles.card}>
       <View style={styles.topRow}>
         <View style={[styles.categoryBadge, { backgroundColor: categoryColor + '18' }]}>
           <Text style={[styles.categoryText, { color: categoryColor }]}>
-            {post.categoryId.replace('-', ' ')}
+            {categoryLabel}
           </Text>
         </View>
         <Text style={styles.date}>{post.date}</Text>
@@ -34,7 +43,7 @@ export default function ForumPostCard({ post, onPress, onLike }: ForumPostCardPr
 
       <View style={styles.footer}>
         <Text style={styles.author}>
-          {post.isAnonymous ? t('common.anonymous') : post.author}
+          {post.isAnonymous ? t('common.anonymous') : post.author || t('common.user')}
         </Text>
         <View style={styles.actions}>
           <TouchableOpacity

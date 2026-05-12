@@ -21,7 +21,6 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
 
   
-  const [darkMode, setDarkMode] = useState(false);
 
   const handleSaveProfile = async () => {
     if (!name.trim()) {
@@ -80,18 +79,7 @@ export default function SettingsScreen() {
       </Card>
 
       <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
-      <Card style={styles.card}>
-    
-        
-        <SettingRow
-          label={t('settings.darkMode')}
-          description={t('settings.darkModeDesc')}
-          value={darkMode}
-          onToggle={setDarkMode}
-          disabled
-        />
-      </Card>
-
+     
       <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
       <Card style={styles.card}>
         <LanguageOption

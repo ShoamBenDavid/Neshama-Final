@@ -37,6 +37,11 @@ export interface TranslationDictionary {
     dontHaveAccount: string;
     iAlreadyHaveAccount: string;
     loginFailed: string;
+    userNotFound: string;
+    invalidPassword: string;
+    invalidCredentials: string;
+    accountDeactivated: string;
+    loginTryAgain: string;
     registrationFailed: string;
     sessionExpiredTitle: string;
     sessionExpiredMessage: string;
@@ -145,6 +150,9 @@ export interface TranslationDictionary {
     loadingEntry: string;
     failedToLoad: string;
     anxietyLabel: string;
+    anxietyLevelLow: string;
+    anxietyLevelModerate: string;
+    anxietyLevelHigh: string;
     tags: string;
     deleteEntry: string;
     deleteConfirmation: string;
@@ -301,6 +309,9 @@ export interface TranslationDictionary {
     poseSequence: string;
     holdDuration: string;
     watchVideoGuide: string;
+    difficultyBeginner: string;
+    difficultyIntermediate: string;
+    difficultyAdvanced: string;
   };
   moods: {
     struggling: string;
@@ -318,14 +329,26 @@ export interface TranslationDictionary {
     support: string;
   };
   tags: {
-    gratitude: string;
     anxiety: string;
+    stress: string;
+    sadness: string;
+    depression: string;
+    anger: string;
+    loneliness: string;
+    overthinking: string;
     sleep: string;
-    exercise: string;
-    therapy: string;
-    work: string;
+    energy: string;
+    motivation: string;
+    gratitude: string;
+    success: string;
+    'self-care': string;
     relationships: string;
-    mindfulness: string;
+    family: string;
+    studies: string;
+    work: string;
+    health: string;
+    routine: string;
+    general: string;
   };
   notifications: {
     title: string;
@@ -349,6 +372,11 @@ export interface TranslationDictionary {
     quietHoursDesc: string;
     allEnabled: string;
     allDisabled: string;
+    permissionDeniedTitle: string;
+    permissionDeniedMessage: string;
+    openSettings: string;
+    unsupportedTitle: string;
+    unsupportedMessage: string;
   };
   privacy: {
     title: string;

@@ -1,166 +1,188 @@
-import React, { useEffect, useCallback } from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, StyleSheet, Alert } from 'react-native';
+  import React, { useEffect, useCallback } from 'react';
+  import { createNativeStackNavigator } from '@react-navigation/native-stack';
+  import { ActivityIndicator, View, StyleSheet, Alert } from 'react-native';
 
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { checkAuthStatus, sessionExpired } from '../store/slices/authSlice';
-import { onSessionExpired } from '../services/sessionManager';
-import { useTranslation } from '../i18n';
-import { colors } from '../theme/colors';
+  import { useAppSelector, useAppDispatch } from '../store/hooks';
+  import { checkAuthStatus, sessionExpired } from '../store/slices/authSlice';
+  import { onSessionExpired } from '../services/sessionManager';
+  import { useTranslation } from '../i18n';
+  import { colors } from '../theme/colors';
 
-import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import WelcomeScreen from '../screens/WelcomeScreen';
+  import LoginScreen from '../screens/LoginScreen';
+  import RegisterScreen from '../screens/RegisterScreen';
+  import WelcomeScreen from '../screens/WelcomeScreen';
 
-import BottomTabNavigator from './BottomTabNavigator';
+  import BottomTabNavigator, { BottomTabParamList } from './BottomTabNavigator';
 
-import ChatScreen from '../screens/ChatScreen';
-import ContentLibraryScreen from '../screens/ContentLibraryScreen';
-import JournalEntryScreen from '../screens/JournalEntryScreen';
-import CreateJournalScreen from '../screens/CreateJournalScreen';
-import ForumPostScreen from '../screens/ForumPostScreen';
-import CreateForumPostScreen from '../screens/CreateForumPostScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import ForumScreen from '../screens/ForumScreen'; 
-import BreathingExercisesScreen from '../screens/BreathingExercisesScreen';
-import BreathingSessionScreen from '../screens/BreathingSessionScreen';
-import MeditationLibraryScreen from '../screens/MeditationLibraryScreen';
-import MeditationSessionScreen from '../screens/MeditationSessionScreen';
-import YogaSessionsScreen from '../screens/YogaSessionsScreen';
-import YogaDetailScreen from '../screens/YogaDetailScreen';
-import ArticlesScreen from '../screens/ArticlesScreen';
-import ArticleDetailScreen from '../screens/ArticleDetailScreen';
-import AudioRelaxationScreen from '../screens/AudioRelaxationScreen';
-import NotificationOptionsScreen from '../screens/NotificationOptionsScreen';
-import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
-import HelpFAQScreen from '../screens/HelpFAQScreen';
-import AboutNeshamaScreen from '../screens/AboutNeshamaScreen';
+  import ChatScreen from '../screens/ChatScreen';
+  import ContentLibraryScreen from '../screens/ContentLibraryScreen';
+  import JournalEntryScreen from '../screens/JournalEntryScreen';
+  import CreateJournalScreen from '../screens/CreateJournalScreen';
+  import ForumPostScreen from '../screens/ForumPostScreen';
+  import CreateForumPostScreen from '../screens/CreateForumPostScreen';
+  import ProfileScreen from '../screens/ProfileScreen';
+  import SettingsScreen from '../screens/SettingsScreen';
+  import BreathingExercisesScreen from '../screens/BreathingExercisesScreen';
+  import BreathingSessionScreen from '../screens/BreathingSessionScreen';
+  import MeditationLibraryScreen from '../screens/MeditationLibraryScreen';
+  import MeditationSessionScreen from '../screens/MeditationSessionScreen';
+  import YogaSessionsScreen from '../screens/YogaSessionsScreen';
+  import YogaDetailScreen from '../screens/YogaDetailScreen';
+  import ArticlesScreen from '../screens/ArticlesScreen';
+  import ArticleDetailScreen from '../screens/ArticleDetailScreen';
+  import AudioRelaxationScreen from '../screens/AudioRelaxationScreen';
+  import NotificationOptionsScreen from '../screens/NotificationOptionsScreen';
+  import PrivacySecurityScreen from '../screens/PrivacySecurityScreen';
+  import HelpFAQScreen from '../screens/HelpFAQScreen';
+  import AboutNeshamaScreen from '../screens/AboutNeshamaScreen';
+import { NavigatorScreenParams } from '@react-navigation/native';
 
-export type RootStackParamList = {
-  Welcome: undefined;
-  Login: undefined;
-  Register: undefined;
-  MainTabs: undefined;
-  Forum: undefined;
-  Chat: undefined;
-  ContentLibrary: undefined;
-  JournalEntry: { entryId: string };
-  CreateJournal: { initialMood?: number };
-  ForumPost: { postId: string };
-  CreateForumPost: undefined;
-  Profile: undefined;
-  Settings: undefined;
-  NotificationOptions: undefined;
-  PrivacySecurity: undefined;
-  HelpFAQ: undefined;
-  AboutNeshama: undefined;
-  BreathingExercises: undefined;
-  BreathingSession: { exerciseId: string };
-  MeditationLibrary: undefined;
-  MeditationSession: { sessionId: string };
-  YogaSessions: undefined;
-  YogaDetail: { sessionId: string };
-  Articles: undefined;
-  ArticleDetail: { articleId: string };
-  AudioRelaxation: undefined;
-};
+  export type RootStackParamList = {
+    Welcome: undefined;
+    Login: undefined;
+    Register: undefined;
+    MainTabs: NavigatorScreenParams<BottomTabParamList>;
+    Chat: undefined;
+    ContentLibrary: undefined;
+    JournalEntry: { entryId: string };
+    CreateJournal: { initialMood?: number };
+    ForumPost: { postId: string };
+    CreateForumPost: undefined;
+    Profile: undefined;
+    Settings: undefined;
+    NotificationOptions: undefined;
+    PrivacySecurity: undefined;
+    HelpFAQ: undefined;
+    AboutNeshama: undefined;
+    BreathingExercises: undefined;
+    BreathingSession: { exerciseId: string };
+    MeditationLibrary: undefined;
+    MeditationSession: { sessionId: string };
+    YogaSessions: undefined;
+    YogaDetail: { sessionId: string };
+    Articles: undefined;
+    ArticleDetail: { articleId: string };
+    AudioRelaxation: undefined;
+  };
+  const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-function LoadingScreen() {
-  return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={colors.primary} />
-    </View>
-  );
-}
-
-function AuthNavigator() {
-  return (
-    <Stack.Navigator
-      initialRouteName="Welcome"
-      screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
-    >
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-    </Stack.Navigator>
-  );
-}
-
-function MainAppNavigator() {
-  return (
-    <Stack.Navigator
-      initialRouteName="MainTabs"
-      screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-        contentStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="Forum" component={ForumScreen} />
-      <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
-      <Stack.Screen name="ContentLibrary" component={ContentLibraryScreen} />
-      <Stack.Screen name="JournalEntry" component={JournalEntryScreen} />
-      <Stack.Screen name="CreateJournal" component={CreateJournalScreen} />
-      <Stack.Screen name="ForumPost" component={ForumPostScreen} />
-      <Stack.Screen name="CreateForumPost" component={CreateForumPostScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="NotificationOptions" component={NotificationOptionsScreen} />
-      <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
-      <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
-      <Stack.Screen name="AboutNeshama" component={AboutNeshamaScreen} />
-      <Stack.Screen name="BreathingExercises" component={BreathingExercisesScreen} />
-      <Stack.Screen name="BreathingSession" component={BreathingSessionScreen} />
-      <Stack.Screen name="MeditationLibrary" component={MeditationLibraryScreen} />
-      <Stack.Screen name="MeditationSession" component={MeditationSessionScreen} />
-      <Stack.Screen name="YogaSessions" component={YogaSessionsScreen} />
-      <Stack.Screen name="YogaDetail" component={YogaDetailScreen} />
-      <Stack.Screen name="Articles" component={ArticlesScreen} />
-      <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
-      <Stack.Screen name="AudioRelaxation" component={AudioRelaxationScreen} />
-    </Stack.Navigator>
-  );
-}
-
-export default function StackNavigator() {
-  const dispatch = useAppDispatch();
-  const { isAuthenticated, isCheckingAuth } = useAppSelector(
-    (state) => state.auth,
-  );
-  const { t } = useTranslation();
-
-  const handleSessionExpired = useCallback(() => {
-    dispatch(sessionExpired());
-    Alert.alert(
-      t('auth.sessionExpiredTitle'),
-      t('auth.sessionExpiredMessage'),
+  function LoadingScreen() {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
     );
-  }, [dispatch, t]);
-
-  useEffect(() => {
-    return onSessionExpired(handleSessionExpired);
-  }, [handleSessionExpired]);
-
-  useEffect(() => {
-    dispatch(checkAuthStatus());
-  }, [dispatch]);
-
-  if (isCheckingAuth) {
-    return <LoadingScreen />;
   }
 
-  return isAuthenticated ? <MainAppNavigator /> : <AuthNavigator />;
-}
+  function AuthNavigator() {
+    return (
+      <Stack.Navigator
+        initialRouteName="Welcome"
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+      </Stack.Navigator>
+    );
+  }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-});
+  function MainAppNavigator() {
+    return (
+      <Stack.Navigator
+        initialRouteName="MainTabs"
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="ContentLibrary" component={ContentLibraryScreen} />
+        <Stack.Screen name="JournalEntry" component={JournalEntryScreen} />
+        <Stack.Screen name="CreateJournal" component={CreateJournalScreen} />
+        <Stack.Screen name="ForumPost" component={ForumPostScreen} />
+        <Stack.Screen name="CreateForumPost" component={CreateForumPostScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen
+          name="NotificationOptions"
+          component={NotificationOptionsScreen}
+        />
+        <Stack.Screen
+          name="PrivacySecurity"
+          component={PrivacySecurityScreen}
+        />
+        <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
+        <Stack.Screen name="AboutNeshama" component={AboutNeshamaScreen} />
+        <Stack.Screen
+          name="BreathingExercises"
+          component={BreathingExercisesScreen}
+        />
+        <Stack.Screen
+          name="BreathingSession"
+          component={BreathingSessionScreen}
+        />
+        <Stack.Screen
+          name="MeditationLibrary"
+          component={MeditationLibraryScreen}
+        />
+        <Stack.Screen
+          name="MeditationSession"
+          component={MeditationSessionScreen}
+        />
+        <Stack.Screen name="YogaSessions" component={YogaSessionsScreen} />
+        <Stack.Screen name="YogaDetail" component={YogaDetailScreen} />
+        <Stack.Screen name="Articles" component={ArticlesScreen} />
+        <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
+        <Stack.Screen
+          name="AudioRelaxation"
+          component={AudioRelaxationScreen}
+        />
+      </Stack.Navigator>
+    );
+  }
+
+  export default function StackNavigator() {
+    const dispatch = useAppDispatch();
+    const { isAuthenticated, isCheckingAuth } = useAppSelector(
+      (state) => state.auth
+    );
+    const { t } = useTranslation();
+
+    const handleSessionExpired = useCallback(() => {
+      dispatch(sessionExpired());
+      Alert.alert(
+        t('auth.sessionExpiredTitle'),
+        t('auth.sessionExpiredMessage')
+      );
+    }, [dispatch, t]);
+
+    useEffect(() => {
+      const unsubscribe = onSessionExpired(handleSessionExpired);
+      return unsubscribe;
+    }, [handleSessionExpired]);
+
+    useEffect(() => {
+      dispatch(checkAuthStatus());
+    }, [dispatch]);
+
+    if (isCheckingAuth) {
+      return <LoadingScreen />;
+    }
+
+    return isAuthenticated ? <MainAppNavigator /> : <AuthNavigator />;
+  }
+
+  const styles = StyleSheet.create({
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+  });

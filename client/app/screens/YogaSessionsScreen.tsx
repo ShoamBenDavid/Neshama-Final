@@ -5,10 +5,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Header } from '../components/ui';
-import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
-import { yogaSessions } from '../content';
+import { getYogaSessions } from '../content/localizedContent';
 import type { RootStackParamList } from '../navigation/StackNavigator';
 import { useTranslation } from '../i18n';
 
@@ -16,14 +15,20 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function YogaSessionsScreen() {
   const navigation = useNavigation<Nav>();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const sessions = getYogaSessions(language);
+  const getDifficultyLabel = (difficulty: 'beginner' | 'intermediate' | 'advanced') => {
+    if (difficulty === 'intermediate') return t('yoga.difficultyIntermediate');
+    if (difficulty === 'advanced') return t('yoga.difficultyAdvanced');
+    return t('yoga.difficultyBeginner');
+  };
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
       <Header title={t('yoga.title')} showBack subtitle={t('yoga.subtitle')} />
 
       <FlatList
-        data={yogaSessions}
+        data={sessions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -41,7 +46,7 @@ export default function YogaSessionsScreen() {
                 <Ionicons name={item.icon as any} size={28} color="rgba(255,255,255,0.9)" />
                 <View style={styles.badges}>
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.difficulty}</Text>
+                    <Text style={styles.badgeText}>{getDifficultyLabel(item.difficulty)}</Text>
                   </View>
                   {item.youtubeId && (
                     <View style={styles.badge}>

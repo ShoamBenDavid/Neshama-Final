@@ -11,20 +11,34 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
-    },
-
-    "extra": {
-      "eas": {
-        "projectId": "317af870-b18a-4e03-9963-f29e50e2f98c"
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
-    "owner": "shoam333",
-    "runtimeVersion": {
-      "policy": "appVersion"
+    "android": {
+      "package": "neshama.app",
+      "permissions": [
+        "NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
-    "updates": {
-      "url": "https://u.expo.dev/317af870-b18a-4e03-9963-f29e50e2f98c"
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#7C5CFC",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "owner": "shoam333",
+    "extra": {
+      "eas": {
+        "projectId": "4ec76c39-f1f2-47a1-9540-7b8d52f59e2b"
+      }
     }
   }
 }

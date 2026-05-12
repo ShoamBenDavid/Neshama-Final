@@ -26,7 +26,7 @@ export default function SupportCenterScreen() {
         title: t('support.talkToAI'),
         description: t('support.talkToAIDesc'),
         icon: 'chatbubble-ellipses-outline' as const,
-        color: colors.accent,
+        color: colors.primary,
         action: 'chat',
       },
       {
@@ -40,14 +40,14 @@ export default function SupportCenterScreen() {
         title: t('support.communitySupport'),
         description: t('support.communitySupportDesc'),
         icon: 'people-outline' as const,
-        color: colors.secondary,
+        color: colors.primary,
         action: 'forum',
       },
       {
         title: t('support.writeInJournal'),
         description: t('support.writeInJournalDesc'),
         icon: 'book-outline' as const,
-        color: colors.status.infoDark,
+        color: colors.primary,
         action: 'journal',
       },
     ],
@@ -63,7 +63,7 @@ export default function SupportCenterScreen() {
         navigation.navigate('ContentLibrary');
         break;
       case 'forum':
-        navigation.navigate('Forum');
+        navigation.navigate('MainTabs', { screen: 'Forum' });
         break;
       case 'journal':
         navigation.navigate('CreateJournal', {});

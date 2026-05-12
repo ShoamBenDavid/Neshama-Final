@@ -53,6 +53,16 @@ export default function ForumPostScreen() {
 
   const categoryColor = colors.category[selectedPost.categoryId] || colors.primary;
   const commentsCount = (selectedPost.comments || []).length;
+  const categoryLabelById: Record<string, string> = {
+    anxiety: t('forum.categoryAnxiety'),
+    depression: t('forum.categoryDepression'),
+    relationships: t('forum.categoryRelationships'),
+    'work-stress': t('forum.categoryWorkStress'),
+    success: t('forum.categorySuccess'),
+    general: t('forum.categoryGeneral'),
+  };
+  const categoryLabel =
+    categoryLabelById[selectedPost.categoryId] ?? selectedPost.categoryId.replace('-', ' ');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -69,7 +79,7 @@ export default function ForumPostScreen() {
             <View style={styles.postContent}>
               <View style={[styles.categoryBadge, { backgroundColor: categoryColor + '18' }]}>
                 <Text style={[styles.categoryText, { color: categoryColor }]}>
-                  {selectedPost.categoryId.replace('-', ' ')}
+                  {categoryLabel}
                 </Text>
               </View>
 
@@ -78,7 +88,7 @@ export default function ForumPostScreen() {
 
               <View style={styles.metaRow}>
                 <Text style={styles.author}>
-                  {selectedPost.isAnonymous ? t('common.anonymous') : selectedPost.author}
+                  {selectedPost.isAnonymous ? t('common.anonymous') : selectedPost.author || t('common.user')}
                 </Text>
                 <Text style={styles.date}>{selectedPost.date}</Text>
               </View>
@@ -109,7 +119,7 @@ export default function ForumPostScreen() {
           renderItem={({ item }: { item: any }) => (
             <Card style={styles.commentCard} variant="outlined">
               <Text style={styles.commentAuthor}>
-                {item.isAnonymous ? t('common.anonymous') : item.user?.name || t('common.user')}
+                {item.isAnonymous ? t('common.anonymous') : item.author || t('common.user')}
               </Text>
               <Text style={styles.commentBody}>{item.content}</Text>
             </Card>

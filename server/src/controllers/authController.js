@@ -83,7 +83,8 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'User does not exist',
+        code: 'USER_NOT_FOUND',
       });
     }
 
@@ -92,6 +93,7 @@ const login = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: 'Account is deactivated',
+        code: 'ACCOUNT_DEACTIVATED',
       });
     }
 
@@ -101,7 +103,8 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Password is incorrect',
+        code: 'INVALID_PASSWORD',
       });
     }
 

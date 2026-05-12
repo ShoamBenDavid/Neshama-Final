@@ -56,6 +56,14 @@ export const loginUser = createAsyncThunk(
       }
       return rejectWithValue(response.message || 'Login failed');
     } catch (error: any) {
+      if (error instanceof ApiError) {
+        if (error.code) {
+          return rejectWithValue(error.code);
+        }
+        if (error.status === 401) {
+          return rejectWithValue('INVALID_CREDENTIALS');
+        }
+      }
       return rejectWithValue(error.message || 'Login failed');
     }
   },

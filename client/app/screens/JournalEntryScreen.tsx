@@ -30,6 +30,14 @@ export default function JournalEntryScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const getAnxietyLabel = (label: string) => {
+    const normalizedLabel = label.trim().toLowerCase();
+    if (normalizedLabel === 'high') return t('journal.anxietyLevelHigh');
+    if (normalizedLabel === 'moderate') return t('journal.anxietyLevelModerate');
+    if (normalizedLabel === 'low') return t('journal.anxietyLevelLow');
+    return label;
+  };
+
   useEffect(() => {
     loadEntry();
   }, [entryId]);
@@ -100,7 +108,7 @@ export default function JournalEntryScreen() {
           <View style={styles.anxietyBadge}>
             <Ionicons name="pulse-outline" size={14} color={colors.text.tertiary} />
             <Text style={styles.anxietyText}>
-              {t('journal.anxietyLabel', { label: entry.anxietyLabel })}
+              {t('journal.anxietyLabel', { label: getAnxietyLabel(entry.anxietyLabel) })}
             </Text>
           </View>
         )}
